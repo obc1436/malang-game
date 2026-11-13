@@ -2408,7 +2408,9 @@ let MLK='',MLKK='';function myLook(){if(!G)return undefined;const W=weaponOf(G.w
    - 채팅은 없어요 (손 흔들기 👋만) — 모르는 사람과 말이 오가지 않게
    - 이 연결은 Claude 방(room)과 같은 모양(presence·onPeers)이라, 친구 표시·살려 주기·함께 대군 막기가 그대로 돌아가요 */
 const MP={on:false,code:'',nick:'',state:'',peer:null,host:null,conns:new Map(),pres:{},others:new Map(),handlers:[],evh:{},myId:''};
-const MP_MAX=4;
+const MP_MAX=4;const MPSEEN=new Map();let MPHK=0;
+/* 🏷 폰마다 무작위 기기 번호(이름·위치 정보 없음) → 같은 폰이 다시 들어오면 예전 유령을 바로 지워요 */
+const MPUID=(()=>{try{let u=localStorage.getItem('malang_uid');if(!u||!/^[a-z0-9]{8,16}$/.test(u)){u=Math.random().toString(36).slice(2,12);localStorage.setItem('malang_uid',u);}return u;}catch(e){return Math.random().toString(36).slice(2,12);}})();
 function mpLoadLib(){return new Promise((ok,no)=>{if(window.Peer)return ok();const tryU=(urls)=>{if(!urls.length)return no(new Error('lib'));const s=document.createElement('script');s.src=urls[0];s.onload=()=>window.Peer?ok():tryU(urls.slice(1));s.onerror=()=>tryU(urls.slice(1));document.head.appendChild(s);};
   tryU(['https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js','https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js','https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js']);});}
 function mpCodeId(code){return 'malang-yj-'+code.toLowerCase().replace(/[^a-z0-9가-힣]/g,'').split('').map(c=>c.charCodeAt(0).toString(36)).join('').slice(0,40);}
@@ -2425,34 +2427,43 @@ function mpEmitPeers(list){const peers=list.map(q=>({peer:q.peer,presence:q.pres
 let MPBT=0,MPBQ=0;function mpBroadcast(){const now=performance.now();if(now-MPBT<50){if(!MPBQ)MPBQ=setTimeout(()=>{MPBQ=0;mpBroadcast();},50-(now-MPBT));return;}MPBT=now;/* 너무 잦으면 버리지 않고 조금 뒤에 꼭 보내요 */const list=[{peer:MP.myId,presence:MP.pres}];for(const[id,o]of MP.others)list.push({peer:id,presence:o});
   const msg={t:'s',peers:list};for(const[,c]of MP.conns)try{c.send(msg);}catch(e){}mpEmitPeers(list);}
 function mpBecomeHost(id){MP.state='host';MP.myId=id;MP.others.clear();MP.conns.clear();NET.me=id;
-  MP.peer.on('connection',c=>{c.on('open',()=>{if(MP.conns.size>=MP_MAX-1){try{c.send({t:'full'});}catch(e){}setTimeout(()=>c.close(),300);return;}MP.conns.set(c.peer,c);smallToast('👫 친구가 들어왔어요!','sat');mpBroadcast();});
-    c.on('data',d=>{if(!d||typeof d!=='object')return;if(d.t==='p'&&d.p&&typeof d.p==='object'){MP.others.set(c.peer,mpClean(d.p));mpBroadcast();}else if(d.t==='e'){d.from=c.peer;mpDeliverEvent(d);for(const[id,o]of MP.conns)if(id!==c.peer)try{o.send(d);}catch(e){}}});
-    c.on('close',()=>{MP.conns.delete(c.peer);MP.others.delete(c.peer);mpBroadcast();});});
+  MP.peer.on('connection',c=>{c.on('open',()=>{if(MP.conns.size>=MP_MAX-1){try{c.send({t:'full'});}catch(e){}setTimeout(()=>c.close(),300);return;}MP.conns.set(c.peer,c);MPSEEN.set(c.peer,performance.now());mpStage(4);smallToast('👫 친구가 들어왔어요!','sat');mpBroadcast();});
+    c.on('data',d=>{if(!d||typeof d!=='object')return;if(d.t==='p'&&d.p&&typeof d.p==='object'){MPSEEN.set(c.peer,performance.now());const cp=mpClean(d.p);if(cp.u&&!MP.others.has(c.peer)){for(const[id,o]of MP.others)if(id!==c.peer&&o.u===cp.u){MP.others.delete(id);MPSEEN.delete(id);const oc=MP.conns.get(id);MP.conns.delete(id);try{oc&&oc.close();}catch(e){}}}MP.others.set(c.peer,cp);mpBroadcast();}else if(d.t==='e'){d.from=c.peer;mpDeliverEvent(d);for(const[id,o]of MP.conns)if(id!==c.peer)try{o.send(d);}catch(e){}}});
+    c.on('close',()=>{MP.conns.delete(c.peer);MP.others.delete(c.peer);MPSEEN.delete(c.peer);mpBroadcast();});});
   mpBroadcast();netRefresh();}
 /* 받은 정보는 그대로 믿지 않고 필요한 칸만, 크기도 제한해서 써요 */
-function mpClean(p){const o={};for(const k of['x','z','f','m','a','lv','t','ar','w','d','j','ts','dy'])if(typeof p[k]==='number'&&isFinite(p[k]))o[k]=p[k];if(typeof p.nk==='string')o.nk=p.nk.replace(/[<>&"']/g,'').slice(0,10);
+function mpClean(p){const o={};for(const k of['x','z','f','m','a','lv','t','ar','w','d','j','ts','dy'])if(typeof p[k]==='number'&&isFinite(p[k]))o[k]=p[k];if(typeof p.nk==='string')o.nk=p.nk.replace(/[<>&"']/g,'').slice(0,10);if(typeof p.u==='string'&&/^[a-z0-9]{8,16}$/.test(p.u))o.u=p.u;
   if(p.war&&typeof p.war==='object'&&JSON.stringify(p.war).length<4000)o.war=p.war;if(typeof p.lk==='string'&&p.lk.length<90&&/^[0-9A-Za-z_#.;-]*$/.test(p.lk))o.lk=p.lk;if(typeof p.ld==='string'&&p.ld.length<4000&&/^[0-9A-Za-z_,;-]*$/.test(p.ld))o.ld=p.ld;if(p.rv&&typeof p.rv==='object')o.rv={to:String(p.rv.to||'').slice(0,64),n:+p.rv.n||0};return o;}
 function mpGuest(hostId,slot){MP.state='join';const c=MP.peer.connect(hostId,{reliable:true,serialization:'json'});MP.host=c;MP.myId=MP.peer.id;NET.me=MP.peer.id;
   /* ⏱ 8초 안에 방장이 대답 안 하면 (앱을 나간 '유령 방장') 다음 자리로 옮겨서 다시 만나요 */
-  clearTimeout(MPGT);MPGT=setTimeout(()=>{if(MP.on&&MP.host===c&&!c.open){MP.host=null;try{c.close();}catch(e){}mpConnect(((slot|0)+1)%MP_SLOTS);}},8000);
-  c.on('open',()=>{if(MP.host!==c)return;clearTimeout(MPGT);MP.state='ok';try{c.send({t:'p',p:MP.pres});}catch(e){}smallToast(`👫 방 「${MP.code}」에 들어왔어요!`,'sat');netRefresh();});
+  clearTimeout(MPGT);MPGT=setTimeout(()=>{if(MP.on&&MP.host===c&&!c.open){MP.host=null;MP.fails=(MP.fails|0)+1;try{c.close();}catch(e){}mpConnect(((slot|0)+1)%MP_SLOTS);}},8000);
+  c.on('open',()=>{if(MP.host!==c)return;clearTimeout(MPGT);MP.lastS=performance.now();mpStage(4);MP.fails=0;MP.state='ok';try{c.send({t:'p',p:MP.pres});}catch(e){}smallToast(`👫 방 「${MP.code}」에 들어왔어요!`,'sat');netRefresh();});
   c.on('data',d=>{if(MP.host!==c||!d||typeof d!=='object')return;if(d.t==='full'){smallToast('방이 꽉 찼어요 (최대 4명)','bad');mpLeave();return;}
     if(d.t==='move'){MP.host=null;try{c.close();}catch(e){}mpRetry(0,600);return;}
-    if(d.t==='s'&&Array.isArray(d.peers))mpEmitPeers(d.peers.slice(0,MP_MAX).map(q=>({peer:String(q.peer).slice(0,64),presence:q.peer===MP.myId?MP.pres:mpClean(q.presence||{})})));else if(d.t==='e')mpDeliverEvent(d);});
+    if(d.t==='s'&&Array.isArray(d.peers)){MP.lastS=performance.now();}if(d.t==='s'&&Array.isArray(d.peers))mpEmitPeers(d.peers.slice(0,MP_MAX).map(q=>({peer:String(q.peer).slice(0,64),presence:q.peer===MP.myId?MP.pres:mpClean(q.presence||{})})));else if(d.t==='e')mpDeliverEvent(d);});
   c.on('close',()=>{if(!MP.on||MP.host!==c)return;MP.host=null;smallToast('방장이 나갔어요 — 다시 연결해요…');mpRetry(0,1500);});}
 /* 🔌 방 자리: 기본 자리(0)에 '유령 방장'이 있으면 1·2번 자리를 써요. 1·2번 방장은 12초마다 0번 자리를 확인해서
    비었거나 진짜 방장이 있으면 친구들을 데리고 0번으로 모여요 → 결국 모두 한 방에서 만나요 */
 const MP_SLOTS=3;let MPGT=0,MPPROBE=0;
+/* 🛰 길 찾기(STUN)·중계(TURN) 서버를 여러 개 준비해요.
+   같은 집 와이파이인데도 공유기가 '집 안→집 안' 연결을 막으면, 중계 서버로 이어 줘요 (데이터·학교 와이파이도) */
+const MPOPT={debug:0,config:{iceServers:[
+  {urls:['stun:stun.l.google.com:19302','stun:stun1.l.google.com:19302','stun:stun2.l.google.com:19302']},
+  {urls:'stun:stun.cloudflare.com:3478'},
+  {urls:['turn:openrelay.metered.ca:80','turn:openrelay.metered.ca:443','turn:openrelay.metered.ca:443?transport=tcp'],username:'openrelayproject',credential:'openrelayproject'},
+  {urls:['turn:eu-0.turn.peerjs.com:3478','turn:us-0.turn.peerjs.com:3478'],username:'peerjs',credential:'peerjsp'}],sdpSemantics:'unified-plan'}};
+/* 🔢 연결 단계: 1 연결 도구 받음 · 2 서버 접속 · 3 방 찾음 · 4 친구와 연결 */
+function mpStage(n){if((MP.stg|0)<n||n<=1)MP.stg=n;}
 function mpSlotId(slot){const b=mpCodeId(MP.code);return slot?b+'-'+slot:b;}
 function mpRetry(slot,ms){clearTimeout(MPGT);MPGT=setTimeout(()=>{if(MP.on)mpConnect(slot);},ms+Math.random()*900);}
 function mpFail(){MP.state='err';smallToast('친구 연결이 안 돼요 — 인터넷을 확인해요 (위의 😢 표시를 누르면 다시 연결)','bad');netRefresh();}
 function mpWatch(p){p.on('disconnected',()=>{if(MP.peer===p&&MP.on)try{p.reconnect();}catch(e){}});}
 function mpConnect(slot){slot=slot|0;MP.slot=slot;clearTimeout(MPGT);clearInterval(MPPROBE);MPPROBE=0;MP.probing=false;const hostId=mpSlotId(slot);MP.host=null;try{if(MP.peer)MP.peer.destroy();}catch(e){}MP.state='wait';
-  const p=new Peer(hostId);MP.peer=p;mpWatch(p);
-  p.on('open',id=>{if(MP.peer!==p)return;mpBecomeHost(id);if(slot>0)MPPROBE=setInterval(mpProbe,12000);});
+  MP.stg=1;const p=new Peer(hostId,MPOPT);MP.peer=p;mpWatch(p);
+  p.on('open',id=>{if(MP.peer!==p)return;mpStage(3);MP.fails=0;mpBecomeHost(id);if(slot>0)MPPROBE=setInterval(mpProbe,12000);});
   p.on('error',e=>{if(MP.peer!==p)return;const t=e&&e.type;
     if(MP.probing&&t==='peer-unavailable'){MP.probing=false;mpMoveAll();return;}
-    if(t==='unavailable-id'){try{p.destroy();}catch(_){}const g=new Peer();MP.peer=g;mpWatch(g);g.on('open',()=>{if(MP.peer===g)mpGuest(hostId,slot);});
+    if(t==='unavailable-id'){mpStage(2);try{p.destroy();}catch(_){}const g=new Peer(MPOPT);MP.peer=g;mpWatch(g);g.on('open',()=>{if(MP.peer===g){mpStage(3);mpGuest(hostId,slot);}});
       g.on('error',e2=>{if(MP.peer!==g)return;if(e2&&e2.type==='peer-unavailable')mpRetry(slot,1200);else if(!(e2&&e2.type==='network'))mpFail();});}
     else if(t==='peer-unavailable')mpRetry(slot,1500);else if(t==='network'||t==='server-error'||t==='socket-error'||t==='socket-closed')mpRetry(slot,3000);else mpFail();});}
 function mpProbe(){if(!MP.on||MP.state!=='host'||!MP.slot||MP.probing)return;MP.probing=true;let c=null;try{c=MP.peer.connect(mpSlotId(0),{reliable:true,serialization:'json'});}catch(e){MP.probing=false;return;}
@@ -2460,19 +2471,24 @@ function mpProbe(){if(!MP.on||MP.state!=='host'||!MP.slot||MP.probing)return;MP.
   setTimeout(()=>{if(MP.probing){MP.probing=false;try{c.close();}catch(e){}}},6000);}
 function mpMoveAll(){for(const[,c]of MP.conns)try{c.send({t:'move'});}catch(e){}clearInterval(MPPROBE);MPPROBE=0;setTimeout(()=>{if(MP.on)mpConnect(0);},250);}
 /* 📶 폰에서 앱을 나갔다 오면 다시 연결해요 */
-document.addEventListener('visibilitychange',()=>{if(document.hidden||!MP.on)return;const p=MP.peer;if(p&&p.disconnected&&!p.destroyed)try{p.reconnect();}catch(e){}if(MP.state==='err')mpConnect(0);});
+document.addEventListener('visibilitychange',()=>{if(document.hidden||!MP.on)return;if(MP.state==='ok'&&performance.now()-(MP.lastS||0)>5000){const c=MP.host;MP.host=null;try{c&&c.close();}catch(e){}mpRetry(0,300);return;}const p=MP.peer;if(p&&p.disconnected&&!p.destroyed)try{p.reconnect();}catch(e){}if(MP.state==='err')mpConnect(0);});
 /* 👫 연결 표시 (눌러서 다시 연결) */
 let MPCHIP=null,MPCV='';
-function mpChip(){if(!MP.on){if(MPCHIP&&!MPCHIP.hidden)MPCHIP.hidden=true;return;}
-  if(!MPCHIP){MPCHIP=document.createElement('button');MPCHIP.id='mpchip';document.body.appendChild(MPCHIP);MPCHIP.addEventListener('click',()=>{if(MP.state==='err'||MP.state==='wait'||MP.state==='join'||(MP.state==='host'&&!NET.peers.size)){smallToast('🔄 친구를 다시 찾아요…');mpConnect(0);}});}
-  const n=NET.peers.size;const st=MP.state;const v=(st==='host'||st==='ok')?(n?`👫 친구 ${n}명 함께`:`👫 「${MP.code}」 친구 기다리는 중`):st==='err'?'😢 연결 안 됨 · 눌러서 다시':'🔄 친구 찾는 중…';
+/* 👻 소식이 끊긴 친구 정리: 8초 동안 소식이 없으면 화면에서 숨기고(멈춘 유령 캐릭터 방지), 30초면 연결을 정리해요.
+   친구 쪽: 방장 소식이 8초 없으면 방장을 숨기고, 12초면 다시 방을 찾아요 (방장이 앱을 나간 경우) */
+function mpHouse(){const now=performance.now();if(now-MPHK<1000)return;MPHK=now;
+  if(MP.state==='host'){let ch=false;for(const[id,c]of MP.conns){const age=now-(MPSEEN.get(id)||now);if(age>8000&&MP.others.has(id)){MP.others.delete(id);ch=true;}if(age>30000){try{c.close();}catch(e){}MP.conns.delete(id);MPSEEN.delete(id);ch=true;}}if(ch)mpBroadcast();}
+  else if(MP.state==='ok'){const age=now-(MP.lastS||now);if(age>8000&&NET.peers.size)mpEmitPeers([{peer:MP.myId,presence:MP.pres}]);if(age>12000){MP.lastS=now;const c=MP.host;MP.host=null;try{c&&c.close();}catch(e){}smallToast('방장 소식이 끊겼어요 — 다시 연결해요…');mpRetry(0,300);}}}
+function mpChip(){mpHouse();if(!MP.on){if(MPCHIP&&!MPCHIP.hidden)MPCHIP.hidden=true;return;}
+  if(!MPCHIP){MPCHIP=document.createElement('button');MPCHIP.id='mpchip';document.body.appendChild(MPCHIP);MPCHIP.addEventListener('click',()=>{const sg=MP.stg|0;smallToast(['','1단계: 연결 도구를 받았어요','2단계까지: 친구 찾기 서버에 접속했어요','3단계까지: 방을 찾았어요 — 친구와 길을 잇는 중','4단계: 친구와 연결됐어요!'][Math.min(4,sg)]||'연결 준비 중');if(MP.state==='err'||MP.state==='wait'||MP.state==='join'||(MP.state==='host'&&!NET.peers.size)){smallToast('🔄 친구를 다시 찾아요…');mpConnect(0);}});}
+  const n=NET.peers.size;const st=MP.state,sg=MP.stg|0;const v=(st==='host'||st==='ok')?(n?`👫 친구 ${n}명 함께`:(MP.fails>=2?'😢 친구와 길이 막혔어요 · 와이파이↔데이터 바꿔 봐요':`👫 「${MP.code}」 친구 기다리는 중`)):st==='err'?`😢 연결 안 됨 (${sg}/4) · 눌러서 다시`:(MP.fails>=2?'😢 친구와 길이 막혔어요 · 와이파이↔데이터 바꿔 봐요':`🔄 친구 찾는 중… (${sg}/4)`);
   if(v!==MPCV){MPCV=v;MPCHIP.textContent=v;MPCHIP.className=st==='err'?'bad':n?'ok':'';}if(MPCHIP.hidden)MPCHIP.hidden=false;}
 async function mpJoin(nick,code){nick=(nick||'').trim().replace(/[<>&"']/g,'').slice(0,10);code=(code||'').trim().slice(0,16);if(!nick||!code){smallToast('닉네임과 방 코드를 모두 넣어요','bad');return false;}
   MP.nick=nick;MP.code=code;try{localStorage.setItem('malang_mp',JSON.stringify({nick,code}));}catch(e){}
   /* 방 저장은 인터넷 연결과 상관없이 먼저 골라요 → 친구 연결이 안 돼도 그 방(예준반이면 35일째) 저장으로 할 수 있어요 */
   MP.sel=code;SAVE_KEY=roomSaveKey(code);
   try{await mpLoadLib();}catch(e){smallToast('친구 연결은 안 됐지만, 「'+code+'」 방 저장으로 혼자 할 수 있어요','bad');return false;}
-  MP.on=true;MP.pres={nk:nick};roomRec(true);if(!NET.room){NET.room=MPROOM;attachRoom(MPROOM);}mpConnect();netRefresh();return true;}
+  MP.on=true;MP.fails=0;MP.stg=1;MP.pres={nk:nick,u:MPUID};roomRec(true);if(!NET.room){NET.room=MPROOM;attachRoom(MPROOM);}mpConnect();netRefresh();return true;}
 function mpLeave(){MP.on=false;clearTimeout(MPGT);clearInterval(MPPROBE);MPPROBE=0;MP.host=null;MP.sel='';SAVE_KEY=SAVE_KEY0;try{MP.peer&&MP.peer.destroy();}catch(e){}MP.state='';NET.peers.clear();netRefresh();}
 function mpSaved(){try{return JSON.parse(localStorage.getItem('malang_mp')||'null')||{};}catch(e){return{};}}
 /* 첫 화면 '👫 친구와 같이 하기' (Claude 안에서는 원래 친구 연결을 써서 안 보여요) */

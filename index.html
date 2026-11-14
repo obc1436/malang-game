@@ -876,7 +876,7 @@ function newGame(){const o=Array(N*N).fill(0);o[CK]=1;
   for(const h of CREW)G.crew[h]={found:0,hp:PEOPLE[h].hp,down:0};}
 function pk(k){return(G&&G.perks&&G.perks[k])||0;}
 const PERKS={atk:{ico:'⚔',n:'힘',d:'내 공격 +7%'},hp:{ico:'❤',n:'튼튼',d:'최대 체력 +9%'},crew:{ico:'🛡',n:'지휘',d:'부하 공격·체력 +9%'},spd:{ico:'👟',n:'날쌘 발',d:'이동 속도 +5%'},luck:{ico:'🍀',n:'행운',d:'치명타 확률 +4%'},loot:{ico:'🎁',n:'손재주',d:'재료 더 줍기 +7%'},roll:{ico:'💨',n:'구르기 달인',d:'구르기 기력 -20%'},combo:{ico:'🔥',n:'연타',d:'콤보 보너스 한도 +15%'}};
-function maxHP(){return Math.round(armorOf(G.armor).hp*(1+0.09*pk('hp'))*(1+0.04*(effLv()-1))*(1+tb('hp')+0.1*Math.min(1,bl('castle'))));}
+function maxHP(){return Math.round(effArmorHP()*(1+0.09*pk('hp'))*(1+0.04*(effLv()-1))*(1+tb('hp')+0.1*Math.min(1,bl('castle'))));}
 function atkBonus(){return setBonus()*(1+(effLv()-1)*0.04)*(1+0.07*pk('atk'))*(1+comboBonus())*(1+tb('atk')+0.1*Math.min(1,bl('castle')));}
 function xpNeed(){return Math.round(15*Math.pow(1.22,G.lv-1));}
 function owned(){return G.owned.reduce((a,b)=>a+(b?1:0),0);}
@@ -2067,7 +2067,7 @@ function updHUD(dt){if(!G||MODE!=='play')return;HUDT-=dt;
   if(BTT>0){BTT-=dt;if(BTT<=0)$('#toast').classList.remove('on');}
   if(HUDT>0)return;HUDT=0.15;
   const h=Math.floor(G.time),mi=Math.floor((G.time-h)*6)*10;{const tag=SIEGE?'<b class="dday war">🌙 밤 버티기 중!</b>':warOpen()?'<b class="dday fence">🌙 밤 몬스터가 왔어요</b>':G.day>=2&&G.time<NIGHTH&&multiOn()?'<b class="dday">🌙 밤 8시 몬스터</b>':'';{const r=ruleToday();if(r)RULETAG=`<b class="dday rule" title="${r.d}">${r.ico} ${r.n}</b>`;}setHTML('#clock',`${G.day}일째 ☀️ ${String(h).padStart(2,'0')}:${String(mi).padStart(2,'0')} ${tag}${RULETAG}`);}
-  setT('#lv',LVS>G.lv?`Lv ${LVS} 🤝`:'Lv '+G.lv);{const cb=$('#combo');if((P.combo||0)>=3){if(cb.hidden)cb.hidden=false;setHTML('#combo',`🔥 <b>${P.combo}</b> 콤보 · 공격 +${Math.round(comboBonus()*100)}%`);}else if(!cb.hidden)cb.hidden=true;}setHTML('#vilc',G.vil.founded?`🏡 ${vilRank()} · 👪 <b>${fmt(G.vil.people)}</b>${taxReady()?' · <em>💰세금</em>':''}`:'🏕 캠프 · 마을 세우기 전');setT('#wname',weaponOf(G.weapon).name);setT('#land',`${owned()}/${N*N}`);
+  setT('#lv',LVS>G.lv||ARS?`Lv ${effLv()} 🤝${ARS?'🛡':''}`:'Lv '+G.lv);{const cb=$('#combo');if((P.combo||0)>=3){if(cb.hidden)cb.hidden=false;setHTML('#combo',`🔥 <b>${P.combo}</b> 콤보 · 공격 +${Math.round(comboBonus()*100)}%`);}else if(!cb.hidden)cb.hidden=true;}setHTML('#vilc',G.vil.founded?`🏡 ${vilRank()} · 👪 <b>${fmt(G.vil.people)}</b>${taxReady()?' · <em>💰세금</em>':''}`:'🏕 캠프 · 마을 세우기 전');setT('#wname',weaponOf(G.weapon).name);setT('#land',`${owned()}/${N*N}`);
   const ob=objective();setT('#objt',ob.t);const ar=$('#oarr');if(ob.x!=null){const a=Math.atan2(ob.x-P.x,ob.z-P.z);const rel=-(a-(CAM.yaw+Math.PI));const rq=Math.round(rel*20)/20;if(ar._r!==rq){ar._r=rq;ar.style.transform=`rotate(${rq}rad)`;}if(ar.hidden)ar.hidden=false;const d=Math.hypot(ob.x-P.x,ob.z-P.z);setT('#odist',d>8?Math.round(d)+'m':'');}else{if(!ar.hidden)ar.hidden=true;setT('#odist','');}
   setHTML('#pips',BATTLE?Array.from({length:BATTLE.total},(_,i)=>`<i class="${i<BATTLE.wave?'on':i===BATTLE.wave?'cur':''}"></i>`).join(''):'');
   let fc=haveOf('berry');for(const f of FOODS)if(!f.from)fc+=G.foods[f.id]||0;{const bf=$('#bF');if(bf.dataset.n!=fc)bf.dataset.n=fc;}squadBtn();
@@ -2309,7 +2309,7 @@ function attachRoom(room){room.onPeers(ch=>{for(const p of ch.peers){if(p.isMe){
 function netRefresh(){if(PANEL==='title')renderPanel();}
 async function resolveNames(){if(!NET.user)return;const ids=[...NET.peers.values()].map(p=>p.by).filter(Boolean).filter(id=>!(id in NET.names));if(!ids.length)return;try{const ps=await NET.user.profiles(ids);for(const id of ids){const pr=ps&&ps[id];NET.names[id]=(pr&&pr.name)||'';}}catch(e){}}
 function peerName(peer){const p=NET.peers.get(peer);return(p&&p.p&&p.p.nk)||(p&&p.by&&NET.names[p.by])||'다른 원정대원';}
-function netTick(){mpChip();if(!NET.room||MODE!=='play'||!G)return;const now=performance.now();if(now-NET.lastPres<(MP.on?66:220))return;NET.lastPres=now;lvSync();if(now-(NET.xpT||0)>500){NET.xpT=now;xpFlush();}if(DAYPEND&&!SIEGE&&!ARENA_ON&&!BATTLE){const d=DAYPEND;DAYPEND=0;daySync(d);}if(LDPEND.size&&!SIEGE&&!ARENA_ON&&!BATTLE){const q=[...LDPEND];LDPEND.clear();for(const[pid,str]of q)landMerge(str,pid);}try{NET.room.presence({x:+P.x.toFixed(1),z:+P.z.toFixed(1),f:+P.face.toFixed(2),ts:Math.round(performance.now()),lk:myLook(),dy:G.day|0,m:P.moving?1:0,a:P.atkT>0?1:0,lv:G.lv,t:owned(),ar:ARENA_ON?1:0,w:G.wi||0,d:P.down?1:0,j:NETJ,war:coopPresence(),rv:REVP,nk:MP.nick||undefined,ld:landCode()}).catch(()=>{});}catch(e){}}
+function netTick(){mpChip();if(!NET.room||MODE!=='play'||!G)return;const now=performance.now();if(now-NET.lastPres<(MP.on?66:220))return;NET.lastPres=now;lvSync();if(now-(NET.xpT||0)>500){NET.xpT=now;xpFlush();}if(DAYPEND&&!SIEGE&&!ARENA_ON&&!BATTLE){const d=DAYPEND;DAYPEND=0;daySync(d);}if(LDPEND.size&&!SIEGE&&!ARENA_ON&&!BATTLE){const q=[...LDPEND];LDPEND.clear();for(const[pid,str]of q)landMerge(str,pid);}try{NET.room.presence({x:+P.x.toFixed(1),z:+P.z.toFixed(1),f:+P.face.toFixed(2),ts:Math.round(performance.now()),lk:myLook(),dy:G.day|0,ah:armorOf(G.armor).hp,m:P.moving?1:0,a:P.atkT>0?1:0,lv:G.lv,t:owned(),ar:ARENA_ON?1:0,w:G.wi||0,d:P.down?1:0,j:NETJ,war:coopPresence(),rv:REVP,nk:MP.nick||undefined,ld:landCode()}).catch(()=>{});}catch(e){}}
 function netWave(){if(!NET.room||!NET.peers.size){smallToast('지금 함께 접속한 사람이 없어요');return;}try{NET.room.emit('wave',{}).catch(()=>{});}catch(e){}smallToast('손을 흔들었어요! 👋');}
 const LBLSEEN=new Set();
 function netLabel(id,top){LBLSEEN.add(id);let el=document.getElementById('lbl-'+id);if(!el){el=document.createElement('div');el.className='plabel';el.id='lbl-'+id;$('#labels').appendChild(el);}
@@ -2329,14 +2329,18 @@ function xpFlush(){if(XPQ<=0||!NET.room)return;const n=Math.round(XPQ);XPQ=0;try
 function xpGot(m){if(m.isMe||!G)return;const d=m.data||m.payload||m;const pr=NET.peers.get(m.peer);if(!pr||!pr.p||!(ARENA_ON?friendHere(pr):sameTile(pr)))return;
   const now=performance.now();if(now-XPRT>1000){XPRT=now;XPRATE=0;}if(++XPRATE>6)return;let n=+d.n;if(!(n>0)||!isFinite(n))return;n=Math.min(Math.round(n*0.5),Math.round(xpNeed()*4),2000000);/* 한 번에 최대 레벨 몇 개만큼 */if(n<1)return;
   gainXP(n);if(Math.random()<0.35)floater(P.x,P.z,3.6,`🎓 +${n} 경험치 (${peerName(m.peer)})`,'#9fe3ff',1.4);}
-/* 🤝 레벨 맞춤: 같은 칸에 붙어 있으면(밤 버티기 들판도) 더 높은 사람 레벨로 둘 다 같아져요. 떨어지면 2초 뒤 원래대로.
-   (내 진짜 레벨·경험치는 그대로 — 힘과 체력 계산에만 쓰여요. 체력은 비율을 지켜서 바꿔요) */
-let LVS=0,LVT=0,LVWHO='';
+/* 🤝 레벨·갑옷 맞춤: 같은 칸에 붙어 있으면(밤 버티기 들판도) 더 높은 사람의 레벨과 갑옷으로 둘 다 같아져요.
+   무기는 그대로 내 것! 떨어지면 2초 뒤 원래대로. (내 진짜 레벨·경험치·갑옷은 그대로 — 힘과 체력 계산에만 쓰여요. 체력은 비율을 지켜서 바꿔요) */
+let LVS=0,ARS=0,LVT=0,LVWHO='';
 function effLv(){return G?(LVS>G.lv?LVS:G.lv):1;}
-function lvSync(){if(!G)return;let hi=0,who='';if(NET.room)for(const[id,pr]of NET.peers){if(!pr.p||typeof pr.p.lv!=='number')continue;const near=ARENA_ON?friendHere(pr):sameTile(pr);if(near&&pr.p.lv>hi){hi=Math.min(999,pr.p.lv|0);who=id;}}
-  const now=performance.now();let want=hi>G.lv?hi:0;if(!want&&LVS){if(!LVT)LVT=now+2000;if(now<LVT)return;}else LVT=0;
-  if(want===LVS)return;const before=maxHP(),wasOn=LVS>0;LVS=want;const after=maxHP();if(before>0&&G.hp>0)G.hp=Math.min(after,Math.max(1,G.hp*after/before));
-  if(want){if(!wasOn||who!==LVWHO)smallToast(`🤝 ${peerName(who)}님 곁이라 레벨이 ${want}로 같아졌어요!`,'sat');LVWHO=who;}else{LVWHO='';smallToast(`🤝 떨어져서 원래 레벨(${G.lv})로 돌아왔어요`);}}
+function effArmorHP(){const a=armorOf(G.armor).hp;return ARS>a?ARS:a;}
+function lvSync(){if(!G)return;let hi=0,ha=0,who='';if(NET.room)for(const[id,pr]of NET.peers){if(!pr.p)continue;const near=ARENA_ON?friendHere(pr):sameTile(pr);if(!near)continue;
+    const l=typeof pr.p.lv==='number'?Math.min(999,pr.p.lv|0):0,h=typeof pr.p.ah==='number'?Math.min(1e9,Math.max(0,pr.p.ah)):0;if(l>hi){hi=l;who=id;}if(h>ha){ha=h;if(!who)who=id;}}
+  const now=performance.now();const wl=hi>G.lv?hi:0,wa=ha>armorOf(G.armor).hp?ha:0;
+  if(!wl&&!wa&&(LVS||ARS)){if(!LVT)LVT=now+2000;if(now<LVT)return;}else LVT=0;
+  if(wl===LVS&&wa===ARS)return;const before=maxHP(),wasOn=LVS>0||ARS>0;LVS=wl;ARS=wa;const after=maxHP();if(before>0&&G.hp>0)G.hp=Math.min(after,Math.max(1,G.hp*after/before));
+  if(wl||wa){if(!wasOn||who!==LVWHO)smallToast(`🤝 ${peerName(who)}님 곁이라 ${wl?`레벨 ${wl}`:''}${wl&&wa?' · ':''}${wa?'🛡 갑옷':''}이 같아졌어요! (무기는 내 것)`,'sat');LVWHO=who;}
+  else{LVWHO='';smallToast(`🤝 떨어져서 원래 레벨(${G.lv})과 갑옷으로 돌아왔어요`);}}
 function coopTile(){if(!NET.room||!G)return false;for(const[,pr]of NET.peers)if(sameTile(pr)&&!pr.p.d)return true;return false;}
 function friendHere(pr){return pr&&pr.p&&!!pr.p.ar===ARENA_ON&&(pr.p.w||0)===(G.wi||0);}
 function friendNearDown(){if(P.down)return null;let best=null,bd=6.25;for(const[id,pr]of NET.peers){if(!(ARENA_ON?friendHere(pr):sameTile(pr))||!pr.p.d)continue;const d=(pr.p.x-P.x)**2+(pr.p.z-P.z)**2;if(d<bd){bd=d;best=id;}}return best;}
@@ -2450,7 +2454,7 @@ function mpBecomeHost(id){MP.state='host';MP.myId=id;MP.others.clear();MP.conns.
     c.on('close',()=>{MP.conns.delete(c.peer);MP.others.delete(c.peer);MPSEEN.delete(c.peer);mpBroadcast();});});
   mpBroadcast();netRefresh();}
 /* 받은 정보는 그대로 믿지 않고 필요한 칸만, 크기도 제한해서 써요 */
-function mpClean(p){const o={};for(const k of['x','z','f','m','a','lv','t','ar','w','d','j','ts','dy'])if(typeof p[k]==='number'&&isFinite(p[k]))o[k]=p[k];if(typeof p.nk==='string')o.nk=p.nk.replace(/[<>&"']/g,'').slice(0,10);if(typeof p.u==='string'&&/^[a-z0-9]{8,16}$/.test(p.u))o.u=p.u;
+function mpClean(p){const o={};for(const k of['x','z','f','m','a','lv','t','ar','w','d','j','ts','dy','ah'])if(typeof p[k]==='number'&&isFinite(p[k]))o[k]=p[k];if(typeof p.nk==='string')o.nk=p.nk.replace(/[<>&"']/g,'').slice(0,10);if(typeof p.u==='string'&&/^[a-z0-9]{8,16}$/.test(p.u))o.u=p.u;
   if(p.war&&typeof p.war==='object'&&JSON.stringify(p.war).length<4000)o.war=p.war;if(typeof p.lk==='string'&&p.lk.length<90&&/^[0-9A-Za-z_#.;-]*$/.test(p.lk))o.lk=p.lk;if(typeof p.ld==='string'&&p.ld.length<4000&&/^[0-9A-Za-z_,;-]*$/.test(p.ld))o.ld=p.ld;if(p.rv&&typeof p.rv==='object')o.rv={to:String(p.rv.to||'').slice(0,64),n:+p.rv.n||0};return o;}
 function mpGuest(hostId,slot){MP.state='join';const c=MP.peer.connect(hostId,{reliable:true,serialization:'json'});MP.host=c;MP.myId=MP.peer.id;NET.me=MP.peer.id;
   /* ⏱ 8초 안에 방장이 대답 안 하면 (앱을 나간 '유령 방장') 다음 자리로 옮겨서 다시 만나요 */
@@ -3200,9 +3204,11 @@ function logClaim(k){G.claimLog=G.claimLog||[];G.claimLog.push((G.wi||0)*1000+k)
 function myLock(){return G&&G.lock&&(G.lock.w||0)===(G.wi||0)?G.lock:null;}
 function isLocked(k){const L=myLock();return!!L&&L.k===k;}
 function keyK(){const L=myLock();return L?L.key:-1;}
+/* 👹 도깨비 땅(🔒·🗝·⬛)은 2명 이상일 때만! 혼자일 땐 검정 땅도 보통 땅처럼 싸워서 차지할 수 있어요 */
+let BLKON=false;
 /* ⬛ 검정 땅: 🗝 열쇠 땅에서 또 지면(또는 도망치면) 🔒 잠겼던 땅이 검정 땅이 돼요 — 들어가도 싸울 수 없고 차지할 수 없어요.
    대신 '다 깼다'를 셀 때는 깬 칸으로 쳐서, 다음 세계로 넘어가는 건 막지 않아요 */
-function isBlack(k){if(!G||!G.black||!G.black.length)return false;const v=(G.wi||0)*1000+k;for(let i=0;i<G.black.length;i++)if(G.black[i]===v)return true;return false;}
+function isBlack(k){if(!G||!G.black||!G.black.length||!BLKON)return false;const v=(G.wi||0)*1000+k;for(let i=0;i<G.black.length;i++)if(G.black[i]===v)return true;return false;}
 function blackN(){if(!G||!G.black)return 0;const w=G.wi||0;let n=0;for(const v of G.black)if(Math.floor(v/1000)===w&&!G.owned[v%1000])n++;return n;}
 function safeTile(k){return k===CK||k===castleK()||(G.portals||[]).includes(k)||(G.mills||[]).includes(k);}
 function lockLand(){LOCKMSG='';if(!G||G.lock||!multiOn())return;/* 혼자일 땐 원래 게임 그대로 (안 잠겨요) */const w=G.wi||0;let R=-1;const log=G.claimLog||[];
@@ -3246,7 +3252,7 @@ function keyFail(retreat){const L=myLock();if(!L||!BATTLE&&!retreat)return false
 function playersOn(){let n=1;for(const[,pr]of NET.peers)if(pr&&pr.p)n++;return n;}
 function multiOn(){return playersOn()>=2;}
 /* 혼자가 된 지 5초가 지나면 잠긴 땅은 원래대로 돌아와요 (혼자일 땐 원래 게임) */
-let SOLOT=0;function lockSoloTick(dt){if(!G||!G.lock||BATTLE)return;if(multiOn()){SOLOT=0;return;}SOLOT+=dt;if(SOLOT<5)return;SOLOT=0;
+let SOLOT=0;function lockSoloTick(dt){if(G&&!BATTLE&&!SIEGE){const on=multiOn();if(on!==BLKON){BLKON=on;if(G.black&&G.black.length){buildGround();buildFence();DONEV=-1;}}}if(!G||!G.lock||BATTLE)return;if(multiOn()){SOLOT=0;return;}SOLOT+=dt;if(SOLOT<5)return;SOLOT=0;
   const L=G.lock;if((L.w||0)===(G.wi||0)){G.owned[L.k]=1;buildGround();buildFence();DONEV=-1;}else{const w=G.worlds[L.w];if(w&&w.o){w.o=w.o.slice(0,L.k)+'1'+w.o.slice(L.k+1);}}
   G.lock=null;smallToast('🔓 혼자 하는 중이라 잠긴 땅이 원래대로 돌아왔어요','sat');save();}
 

@@ -650,6 +650,8 @@ body:not(.touch) #hud #bS{bottom:calc(env(safe-area-inset-bottom,0px) + 150px)}
 #mpchip.ok{background:rgba(220,255,225,.92);color:#1e7a3e}
 #mpchip.bad{background:rgba(255,225,220,.95);color:#b3261e}
 #mpchip[hidden]{display:none}
+
+.verlbl{margin-top:8px;text-align:center;font-size:12px;font-weight:700;color:#e8590c;opacity:.9}
 </style>
 </head><body><canvas id="game" aria-label="말랑 들판 원정대 게임 화면"></canvas>
 <div id="hurt"></div><div id="mbars"></div><div id="labels"></div>
@@ -3617,7 +3619,7 @@ function titleView(){const ls=localSave(),cs=NET.cloud;let cont=null;if(ls&&cs){
   return`<div class="logo"><h1><small class="yj">예준이의</small>말랑 들판<br><span>원정대</span></h1></div>
   ${HASHS?`<div class="mpbox hashbox"><b>📦 카톡으로 받은 저장이 있어요</b><small>${HASHS.day}일째 · 땅 ${(HASHS.owned||[]).filter(Boolean).length}/${N*N} · Lv ${HASHS.lv}</small><button class="big" data-act="hashload">▶ 이 저장으로 이어하기</button></div>`:''}
   <div class="qrslot" id="qrslot">${mpTitleHTML()}</div><!-- 👫 친구 초대 QR 코드 넣을 자리 (나중에) -->
-  <div class="tbtns">${cont?`<button class="big" data-act="continue" data-src="${cont.src}">▶ ${MP.sel?`「${esc(MP.sel)}」 방 `:''}이어하기<small>${cont.s.day}일째 · 땅 ${(cont.s.owned||[]).filter(Boolean).length}/${N*N} · Lv ${cont.s.lv}</small></button>`:`<button class="big" data-act="new">▶ ${MP.sel?`「${esc(MP.sel)}」 방 처음부터`:'시작하기'}</button>`}<button class="big alt" data-act="guidet">📖 설명서</button></div>
+  <div class="tbtns">${cont?`<button class="big" data-act="continue" data-src="${cont.src}">▶ ${MP.sel?`「${esc(MP.sel)}」 방 `:''}이어하기<small>${cont.s.day}일째 · 땅 ${(cont.s.owned||[]).filter(Boolean).length}/${N*N} · Lv ${cont.s.lv}</small></button>`:`<button class="big" data-act="new">▶ ${MP.sel?`「${esc(MP.sel)}」 방 처음부터`:'시작하기'}</button>`}<button class="big alt" data-act="guidet">📖 설명서</button><div class="verlbl">🆕 11월 15일 판 · 친구 연결 강화</div></div>
   <ul class="how"><li><b>이동</b> WASD · 왼쪽 원</li><li><b>공격</b> 스페이스 꾹 · 클릭 · 공격 버튼</li><li><b>구르기</b> K · 우클릭 — 잠깐 무적</li><li><b>시점</b> 화면 끌기 · ← →</li><li><b>교체</b> Q · <b>먹기</b> F · <b>가방</b> B · <b>대장간</b> C · <b>마을</b> T · <b>부하</b> P · <b>지도</b> M</li></ul>
   <p class="netl">${esc(netLine(true))}</p>`;}
 function slotHTML(k,n,side){return`<button class="slot" data-act="mv" data-from="${side}" data-m="${k}" style="--c:${MATCOL[k]}" title="${esc(matName(k))}"><i></i><span>${esc(matName(k))}</span><b>${fmt(n)}</b></button>`;}

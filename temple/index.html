@@ -1390,7 +1390,7 @@ function waveList(w) {
   const isBoss = w % 4 === 0;
   const pool = w === 1 ? ['cultist', 'cultist', 'bandit'] : w === 2 ? ['cultist', 'bandit', 'lancer'] : w < 6 ? ['cultist', 'bandit', 'lancer', 'brute'] : ['bandit', 'lancer', 'brute', 'cultist', 'brute'];
   const L = [];
-  if (isBoss) { L.push('boss'); for (let i = 0; i < 4; i++) L.push(pool[(Math.random() * Math.min(pool.length, 3)) | 0]); }
+  if (isBoss) return ['boss'];   // 보스 웨이브는 보스 혼자
   else for (let i = 0; i < 5; i++) L.push(pool[(Math.random() * pool.length) | 0]);
   if (!isBoss && w >= 3 && !L.includes('brute') && Math.random() < 0.5) L[4] = 'brute';
   return L;

@@ -1671,8 +1671,12 @@ function spawnEnemy(type) {
     e.maxHp = e.hp = Math.round(d.hp * 1.35 * bk); e.dmgV = Math.round(d.dmg * 1.5 * (1 + (w - 1) * 0.1) * (0.55 + bk * 0.45)); e.spd *= 0.85 + Math.min(1, bk) * 0.15;
   }
   else { e.maxHp = e.hp = Math.round(ps.maxHp * (2 / 3) * K); e.dmgV = Math.max(4, Math.round(ps.dmg * (2 / 3) * K)); } e.spd = d.spd * (1 + Math.min(0.35, (w - 1) * 0.025));
-  if (G.cls === 'gun') { e.maxHp = e.hp = Math.round(e.hp * 1.35); e.dmgV = Math.round(e.dmgV * 1.3); e.spd *= 1.12; }   // 총은 원거리라 쉬우니 적이 더 강함
-  e.poise = e.maxPoise = d.poise; e.scale = d.sc; e.look = LOOK[d.look]; e.wpn = EWPN[d.wpn];
+  e.elite = false;
+  if (G.cls === 'gun') {   // 총은 원거리라 쉬우니 적이 '정예 보스급'으로 강해짐
+    if (e.boss) { e.maxHp = e.hp = Math.round(e.hp * 1.6); e.dmgV = Math.round(e.dmgV * 1.4); }
+    else { e.elite = true; e.maxHp = e.hp = Math.round(e.hp * 3); e.dmgV = Math.round(e.dmgV * 1.9); e.spd *= 1.15; e.maxPoise = e.poise = d.poise * 2.5; }
+  }
+  e.poise = e.maxPoise = d.poise; e.scale = d.sc * (G.cls === 'gun' && !e.boss ? 1.12 : 1); e.look = LOOK[d.look]; e.wpn = EWPN[d.wpn]; if (e.elite) e.poise = e.maxPoise = d.poise * 2.5;
   e.st = 'spawn'; e.stT = e.boss ? 1.6 : 0.85; e.cd = 0.8 + Math.random(); e.lastHit = -1; e.dead = false; e.alpha = 1; e.flash = 0; e.enraged = false; e.sq = 0;
   e.face = e.x < P.x ? 1 : -1; e.turn = 1; e.t = Math.random() * 10; e.mv = 0; e.ph = 0; e.holdPose = null; e.prefAlly = Math.random() < 0.45; e.strafe = Math.random() < 0.5 ? 1 : -1; e.strafeT = 1 + Math.random() * 2;
   setAnim(e, ANIM.spawn, 0.01); copyPose(e.disp, ANIM.spawn.keys[0].p);
@@ -1734,7 +1738,7 @@ function killEnemy(e, dir) {
   addStop(e.boss ? 0.4 : 0.11); addShake(e.boss ? 24 : 9); cam.punch = Math.max(cam.punch, e.boss ? 0.12 : 0.035);
   sfx(e.boss ? 'bosskill' : 'kill');
   if (e.boss) { slow = 0.25; slowT = 1.2; whiteF = 0.6; G.boss = null; $('bossBar').classList.add('hide'); G.bossCount++; }
-  const val = Math.round(e.def.coins * 1.5 * (1 + G.wave * 0.12) * (1 + Math.min(1, G.combo * 0.02)));
+  const val = Math.round(e.def.coins * (e.elite ? 3 : 1.5) * (1 + G.wave * 0.12) * (1 + Math.min(1, G.combo * 0.02)));
   const n = Math.min(e.boss ? 30 : 8, Math.max(3, Math.round(val / 2.5))), per = Math.max(1, Math.floor(val / n));
   for (let i = 0; i < n; i++) {
     const c = take(coins); if (!c) break;
@@ -2054,13 +2058,14 @@ function render() {
       if (o.boss && o.enraged) { ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.35 + Math.sin(time * 8) * 0.15; ctx.drawImage(GL.red, o.x - 70, o.y - 170, 140, 180); ctx.globalCompositeOperation = 'source-over'; }
       const warn = o.st === 'wind' || o.st === 'chargeW' || o.st === 'leapW';
       if (warn) { ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.35 + Math.sin(time * 30) * 0.2; ctx.drawImage(GL.red, o.x - 40 * o.scale, o.y - 110 * o.scale, 80 * o.scale, 110 * o.scale); ctx.globalCompositeOperation = 'source-over'; }
+      if (o.elite && !o.dead && o.st !== 'spawn') { ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.32 + Math.sin(time * 6 + o.x) * 0.12; ctx.drawImage(GL.red, o.x - 46 * o.scale, o.y - 110 * o.scale - o.z, 92 * o.scale, 120 * o.scale); ctx.globalCompositeOperation = 'source-over'; }
       if (o.look.aura && !o.dead && o.st !== 'spawn') { ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.22 + Math.sin(time * 4 + o.x) * 0.08; ctx.drawImage(GL[o.look.aura], o.x - 34 * o.scale, o.y - 96 * o.scale - o.z, 68 * o.scale, 104 * o.scale); ctx.globalCompositeOperation = 'source-over'; }
       ctx.globalAlpha = ia;
       const jx = o.jit > 0 ? (Math.random() - 0.5) * 6 * (o.jit / 0.16) : 0;
       drawFigure(ctx, o.x + jx, o.y, o.z, o.scale, o.face, tv(o), o.disp, o.look, o.wpn, o.flash > 0, o.t, o.capeA, null, o.sq);
       ctx.globalAlpha = 1;
       if (warn) { const k = Math.sin(time * 30) * 0.5 + 0.5; ctx.fillStyle = `rgba(255,${(80 + k * 120) | 0},60,1)`; ctx.font = `900 ${20 * o.scale | 0}px sans-serif`; ctx.textAlign = 'center'; ctx.fillText('!', o.x, o.y - 104 * o.scale - o.z); }
-      if (!o.boss && !o.dead && o.hp < o.maxHp && o.st !== 'spawn') { const w = 40, y = o.y - 98 * o.scale - o.z; ctx.fillStyle = '#000b'; ctx.fillRect(o.x - w / 2 - 1, y - 1, w + 2, 6); ctx.fillStyle = '#e03a2a'; ctx.fillRect(o.x - w / 2, y, w * Math.max(0, o.hp / o.maxHp), 4); }
+      if (!o.boss && !o.dead && (o.hp < o.maxHp || o.elite) && o.st !== 'spawn') { if (o.elite) { ctx.fillStyle = '#ff6a5a'; ctx.font = '900 10px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('★정예', o.x, o.y - 104 * o.scale - o.z); } const w = 40, y = o.y - 98 * o.scale - o.z; ctx.fillStyle = '#000b'; ctx.fillRect(o.x - w / 2 - 1, y - 1, w + 2, 6); ctx.fillStyle = '#e03a2a'; ctx.fillRect(o.x - w / 2, y, w * Math.max(0, o.hp / o.maxHp), 4); }
     } else if (o.kind === 'ally') {
       ctx.globalAlpha = o.alpha * (o.inv > 0 && !o.dead && ((o.inv * 18) | 0) % 2 === 0 ? 0.6 : 1);
       drawFigure(ctx, o.x, o.y, o.z, 0.94, o.face, tv(o), o.disp, ALOOK[G.cls], G.cls === 'sword' ? SWORDS[1] : G.cls === 'fist' ? FISTS[1] : GUNS[0], o.flash > 0, o.t, o.capeA, null, 0);

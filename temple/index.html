@@ -30,6 +30,14 @@ canvas#c{position:fixed;inset:0;width:100%;height:100%;display:block;image-rende
 #waveT{font-size:20px;font-weight:900;letter-spacing:3px;color:#ffe2a0;text-shadow:0 0 12px #ff9a3a88,0 2px 2px #000}
 #enemT{font-size:11px;font-weight:800;color:#d8c8a8;text-shadow:0 1px 2px #000}
 #right{display:flex;gap:6px;align-items:center;flex:1;justify-content:flex-end}
+#topBar{display:flex;align-items:center;gap:2px;padding:3px;border-radius:18px;background:#120a06d8;border:1.5px solid #8a6a3a;box-shadow:0 2px 8px #000a;pointer-events:auto}
+#topBar #gold{border:none;background:none;box-shadow:none;height:28px;padding:0 8px 0 3px}
+#bRev,#bMute{pointer-events:auto;cursor:pointer;height:28px;border:none;border-radius:14px;font-family:inherit;font-weight:900;color:#e8f0ff;display:flex;align-items:center;gap:4px}
+#bRev{padding:0 6px 0 8px;background:#1e3a6a;font-size:12px;white-space:nowrap}
+#bRev .ic{font-size:14px}#bRev .pr{color:#ffe27a}
+#revN{background:#3a7ad8;color:#fff;border-radius:8px;padding:0 5px;font-size:11px}
+#bMute{width:30px;justify-content:center;background:none;font-size:15px}
+#bRev:active,#bMute:active{transform:scale(.92)}
 #gold{display:flex;align-items:center;gap:6px;height:30px;padding:0 12px 0 6px;border-radius:15px;background:linear-gradient(#3a2610ee,#1a1006ee);border:1.5px solid #d4a64a;font-weight:900;font-size:16px;color:#ffe27a;box-shadow:0 2px 8px #000a}
 #gold .c{width:20px;height:20px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff6b8,#f0b828 55%,#9a6a06);box-shadow:0 0 8px #ffcf4a}
 #gold.bump{animation:bump .25s}
@@ -47,14 +55,14 @@ canvas#c{position:fixed;inset:0;width:100%;height:100%;display:block;image-rende
 @keyframes cpop{0%{transform:scale(1.6)}100%{transform:scale(1)}}
 #combo small{display:block;font-size:13px;font-weight:900;letter-spacing:4px;color:#ffd08a;text-shadow:0 1px 2px #000}
 /* 조작 버튼 */
-#ctrl{position:fixed;right:calc(env(safe-area-inset-right));bottom:calc(env(safe-area-inset-bottom));width:270px;height:270px;z-index:6;pointer-events:none}
+#ctrl{position:fixed;right:calc(env(safe-area-inset-right));bottom:calc(env(safe-area-inset-bottom));width:300px;height:300px;z-index:6;pointer-events:none}
 .btn{position:absolute;pointer-events:auto;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;touch-action:none;cursor:pointer;
   box-shadow:0 6px 14px #000c,inset 0 -5px 0 #0005,inset 0 2px 0 #fff4;transition:transform .06s;overflow:hidden}
 .btn span{font-size:24px;line-height:1;filter:drop-shadow(0 2px 2px #0008);position:relative;z-index:2}
 .btn small{font-size:9px;font-weight:900;letter-spacing:1px;margin-top:2px;text-shadow:0 1px 2px #000;position:relative;z-index:2}
 .btn.press{transform:scale(.86)}
 .btn::after{content:'';position:absolute;inset:0;border-radius:50%;background:conic-gradient(#000b calc(var(--cd,0)*1%),#0000 0);z-index:1}
-#bAtk{right:22px;bottom:22px;width:100px;height:100px;background:radial-gradient(circle at 40% 30%,#ffc07a,#d4501a 55%,#6a1a04);border:3px solid #ffe0b0}
+#bAtk{right:24px;bottom:24px;width:96px;height:96px;background:radial-gradient(circle at 40% 30%,#ffc07a,#d4501a 55%,#6a1a04);border:3px solid #ffe0b0}
 #bAtk span{font-size:38px}
 #bKick{right:calc(124px + env(safe-area-inset-right));bottom:10px;width:60px;height:60px;background:radial-gradient(circle at 40% 30%,#ffe08a,#b8862a 55%,#4a3006);border:2.5px solid #fff0c0}
 #bDash{right:calc(116px + env(safe-area-inset-right));bottom:84px;width:60px;height:60px;background:radial-gradient(circle at 40% 30%,#b8c8ff,#4a5ad6 55%,#1a1a6a);border:2.5px solid #e0e8ff}
@@ -68,12 +76,12 @@ canvas#c{position:fixed;inset:0;width:100%;height:100%;display:block;image-rende
 #skillBar{position:fixed;left:0;right:0;bottom:0;z-index:7;padding:6px 6px calc(env(safe-area-inset-bottom) + 6px);display:grid;grid-template-columns:repeat(5,1fr);gap:5px;
   background:linear-gradient(#0000,#0a0610ee 18%,#07040aee);border-top:1.5px solid #6a4a1e}
 @media (min-width:720px){#skillBar{grid-template-columns:repeat(10,1fr);padding-left:12vw;padding-right:12vw}}
-.sc{position:absolute;width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;pointer-events:auto;cursor:pointer;touch-action:none;overflow:hidden;
+.sc{position:absolute;width:52px;height:52px;margin:-26px 0 0 -26px;border-radius:50%;pointer-events:auto;cursor:pointer;touch-action:none;overflow:hidden;
   display:flex;flex-direction:column;align-items:center;justify-content:center;border:2.5px solid #e8c878;
   background:radial-gradient(circle at 40% 30%,#6a4a8a,#2a1a4a 60%,#120a22);box-shadow:0 5px 12px #000c,inset 0 -4px 0 #0006,inset 0 2px 0 #fff4;transition:transform .06s}
-.sc span{font-size:25px;line-height:1;position:relative;z-index:2;filter:drop-shadow(0 2px 2px #000)}
-.sc small{font-size:8px;font-weight:900;color:#fff2c8;margin-top:1px;white-space:nowrap;position:relative;z-index:2;text-shadow:0 1px 2px #000;letter-spacing:-.4px;max-width:60px;overflow:hidden}
-.sc b{position:absolute;inset:0;display:grid;place-items:center;font-size:19px;font-weight:900;color:#fff;z-index:3;text-shadow:0 0 6px #000,0 1px 2px #000}
+.sc span{font-size:23px;line-height:1;position:relative;z-index:2;filter:drop-shadow(0 2px 2px #000)}
+.sc small{display:none}
+.sc b{position:absolute;inset:0;display:grid;place-items:center;font-size:17px;font-weight:900;color:#fff;z-index:3;text-shadow:0 0 6px #000,0 1px 2px #000}
 .sc i{position:absolute;right:6px;top:4px;font-style:normal;font-size:9px;font-weight:900;color:#3a1a00;background:#ffd24a;border-radius:6px;padding:0 4px;z-index:3;display:none}
 .sc::after{content:'';position:absolute;inset:0;background:conic-gradient(#000c calc(var(--cd,0)*1%),#0000 0);z-index:1}
 .sc.press{transform:scale(.88)}
@@ -159,7 +167,11 @@ canvas#c{position:fixed;inset:0;width:100%;height:100%;display:block;image-rende
 <div id="hud" class="hide">
   <div id="hpWrap"><div class="nm" id="clsNm">⚔ 순례 검사</div><div class="bar"><i id="hpLag"></i><i id="hpFill"></i><b id="hpT">100 / 100</b></div></div>
   <div id="mid"><div id="waveT">WAVE 1</div><div id="enemT">남은 적 5</div></div>
-  <div id="right"><div id="gold"><div class="c"></div><span id="goldT">0</span></div><button class="hb" id="bRev" style="width:auto;padding:0 7px;font-size:12px;font-weight:900;color:#d0e4ff;border-color:#3a7ad8;white-space:nowrap">🛡️ 부하 $<span id="revP">80</span> <span id="revN" style="background:#3a7ad8;color:#fff;border-radius:8px;padding:0 5px">0/3</span></button><button class="hb" id="bMute">🔊</button></div>
+  <div id="right"><div id="topBar">
+      <div id="gold"><div class="c"></div><span id="goldT">0</span></div>
+      <button id="bRev" title="부하 고용"><span class="ic">🛡️</span><span class="pr">$<span id="revP">80</span></span><span id="revN">0/3</span></button>
+      <button id="bMute" title="소리">🔊</button>
+    </div></div>
 </div>
 <div id="bossBar" class="hide"><div class="nm" id="bossNm">타락한 신전 기사</div><div class="bar"><i id="bossLag"></i><i id="bossFill"></i></div></div>
 <div id="combo"><div id="comboN">0</div><small>HITS</small></div>
@@ -1125,7 +1137,7 @@ const skBtns = [];
 function buildSkillBar() {
   const ring = $('skRing'); ring.innerHTML = ''; skBtns.length = 0;
   // 공격 버튼 중심(오른쪽 아래)을 둘러싸는 부채꼴 배치
-  const cx = 270 - 72, cy = 270 - 72, R = 112, angs = [180, 153, 126, 99, 72];
+  const cx = 300 - 72, cy = 300 - 72, R = 138, angs = [180, 157.5, 135, 112.5, 90];
   for (let k = 0; k < 5; k++) {
     const d = document.createElement('div'); d.className = 'sc';
     const a = angs[k] * Math.PI / 180; d.style.left = (cx + Math.cos(a) * R) + 'px'; d.style.top = (cy - Math.sin(a) * R) + 'px';

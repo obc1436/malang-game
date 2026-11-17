@@ -12,7 +12,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#07060a;touch-action
 canvas#c{position:fixed;inset:0;width:100%;height:100%;display:block;image-rendering:pixelated;image-rendering:crisp-edges;filter:contrast(1.06) saturate(.9) sepia(.1)}
 #crt{position:fixed;inset:0;z-index:4;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.16) 0 1px,rgba(0,0,0,0) 1px 3px);mix-blend-mode:multiply}
 .hide{display:none!important}
-#hud{position:fixed;left:0;right:0;top:0;z-index:5;pointer-events:none;padding:calc(env(safe-area-inset-top) + 10px) 12px 0;display:flex;align-items:flex-start;gap:10px}
+#hud{position:fixed;left:0;right:0;top:0;z-index:25;pointer-events:none;padding:calc(env(safe-area-inset-top) + 10px) 12px 0;display:flex;align-items:flex-start;gap:10px}
 #hpWrap{flex:1;max-width:300px}
 #hpWrap .nm{font-size:11px;font-weight:900;letter-spacing:2px;color:#e8d3a0;text-shadow:0 1px 3px #000;margin-bottom:3px}
 .bar{height:14px;border-radius:3px;background:#140c0a;border:1.5px solid #8a6a3a;position:relative;overflow:hidden;box-shadow:0 2px 6px #000a,inset 0 2px 4px #000}
@@ -153,7 +153,7 @@ canvas#c{position:fixed;inset:0;width:100%;height:100%;display:block;image-rende
 <div id="hud" class="hide">
   <div id="hpWrap"><div class="nm" id="clsNm">⚔ 순례 검사</div><div class="bar"><i id="hpLag"></i><i id="hpFill"></i><b id="hpT">100 / 100</b></div></div>
   <div id="mid"><div id="waveT">WAVE 1</div><div id="enemT">남은 적 5</div></div>
-  <div id="right"><div id="gold"><div class="c"></div><span id="goldT">0</span></div><button class="hb" id="bRev" style="width:auto;padding:0 8px;font-size:12px;font-weight:900;color:#ffd0d8;border-color:#d84a6a">❤️‍🔥 <span id="revN">0</span> · $<span id="revP">150</span></button><button class="hb" id="bMute">🔊</button></div>
+  <div id="right"><div id="gold"><div class="c"></div><span id="goldT">0</span></div><button class="hb" id="bRev" style="width:auto;padding:0 8px;font-size:12px;font-weight:900;color:#ffd0d8;border-color:#d84a6a">❤️‍🔥 부활 $<span id="revP">100</span> <span id="revN" style="background:#d84a6a;color:#fff;border-radius:8px;padding:0 5px">0</span></button><button class="hb" id="bMute">🔊</button></div>
 </div>
 <div id="bossBar" class="hide"><div class="nm" id="bossNm">타락한 신전 기사</div><div class="bar"><i id="bossLag"></i><i id="bossFill"></i></div></div>
 <div id="combo"><div id="comboN">0</div><small>HITS</small></div>
@@ -1501,7 +1501,7 @@ function hurtPlayer(dmg, dir) {
   G.combo = 0; comboBump(); P.ult = Math.min(100, P.ult + 3);
   redF = 0.45; addShake(12); addStop(0.09); sfx('hurt');
   pop(P.x, P.y - 100, '-' + dmg, '#ff4a4a', 26, true); sparks(P.x, P.y, 50, -dir, 10, '#ff8a7a', 300);
-  if (P.hp <= 0) { P.hp = 0; P.st = 'dead'; setAnim(P, ANIM.die, 0.05); P.at = 0; slow = 0.25; slowT = 1.4; setTimeout(() => { if (G.revives > 0) revive(); else gameOver(); }, 1600); return; }
+  if (P.hp <= 0) { P.hp = 0; P.st = 'dead'; setAnim(P, ANIM.die, 0.05); P.at = 0; slow = 0.25; slowT = 1.4; setTimeout(() => { if (P.st !== 'dead') return; if (G.revives > 0) revive(); else gameOver(); }, 1600); return; }
   P.st = 'hurt'; setAnim(P, ANIM.hurt, 0.03); P.buf = null;
 }
 function updateEnemies(dt) {
@@ -1991,7 +1991,7 @@ function saveCheckpoint() { checkpoint = { wave: G.wave, gold: G.gold, wpn: G.wp
 function gameOver() {
   G.state = 'over'; G.deaths++;
   $('overSt').innerHTML = `도달 웨이브 <b>${G.wave}</b><br>처치한 적 <b>${G.kills}</b> · 최대 콤보 <b>${G.maxCombo}</b><br>보유 금화 <b>$${G.gold}</b>`;
-  $('overNote').innerHTML = `걱정 마세요! 무기·업그레이드·금화는 그대로 유지한 채<br><b>WAVE ${G.wave}</b>부터 다시 도전할 수 있어요.`;
+  $('overNote').innerHTML = `💖 오른쪽 위 <b>부활</b> 버튼($${REV_PRICE})을 누르면 이 자리에서 바로 부활!<br>또는  무기·업그레이드·금화는 그대로 유지한 채<br><b>WAVE ${G.wave}</b>부터 다시 도전할 수 있어요.`;
   $('bRetry').textContent = `WAVE ${G.wave}부터 다시`;
   $('over').classList.remove('hide');
 }
@@ -2022,12 +2022,16 @@ $('bRetry').addEventListener('click', () => {
   G.wave = w - 1; enterGame(); startWave();
 });
 $('bRestart').addEventListener('click', () => { $('over').classList.add('hide'); $('hud').classList.add('hide'); $('ctrl').classList.add('hide'); resize(); G.state = 'title'; $('title').classList.remove('hide'); });
-const REV_PRICE = 150;
+const REV_PRICE = 100;
 function updRev() { $('revN').textContent = G.revives; $('revP').textContent = REV_PRICE; }
 $('bRev').addEventListener('click', () => {
   initAudio();
-  if (G.gold < REV_PRICE) { sfx('no'); pop(P.x, P.y - 110, `금화 $${REV_PRICE} 필요`, '#ff9a8a', 15); return; }
-  G.gold -= REV_PRICE; G.revives++; updRev(); sfx('buy'); pop(P.x, P.y - 110, '부활권 +1', '#ffb0c0', 20, true);
+  if (G.state === 'title') return;
+  if (G.gold < REV_PRICE) { sfx('no'); pop(P.x, P.y - 110, `금화 $${REV_PRICE} 필요`, '#ff9a8a', 18, true); return; }
+  G.gold -= REV_PRICE; G.revives++; updRev(); sfx('buy');
+  // 쓰러진 상태라면 그 자리에서 바로 부활
+  if (P.st === 'dead' || G.state === 'over') { $('over').classList.add('hide'); G.state = 'play'; revive(); return; }
+  pop(P.x, P.y - 110, '부활권 +1', '#ffb0c0', 20, true);
 });
 function revive() {
   G.revives--; updRev();

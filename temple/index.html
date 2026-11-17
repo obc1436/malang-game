@@ -171,7 +171,7 @@ canvas#c{position:fixed;inset:0;width:100%;height:100%;display:block;image-rende
   <div id="mid"><div id="waveT">WAVE 1</div><div id="enemT">남은 적 5</div></div>
   <div id="right"><div id="topBar">
       <div id="gold"><div class="c"></div><span id="goldT">0</span></div>
-      <button id="bRev" title="부하 고용"><span class="ic">🛡️</span><span class="pr">$<span id="revP">80</span></span><span id="revN">0/3</span></button>
+      <button id="bRev" title="부하 고용"><span class="ic">🛡️</span><span class="pr">$<span id="revP">80</span></span><span id="revN">0</span></button>
       <button id="bMute" title="소리">🔊</button>
     </div></div>
 </div>
@@ -1931,7 +1931,7 @@ function updateWave(dt) {
     const bossW = G.wave % 4 === 0, gate = bossW && G.toSpawn.length <= 2 && G.boss && G.boss.hp > G.boss.maxHp * 0.55;
     if (G.spawnT <= 0 && !gate && G.freeze <= 0) { spawnEnemy(G.toSpawn.shift()); G.spawnT = bossW ? 1.2 : 0.55; }
   } else if (G.alive <= 0 && G.clearT === 0) { G.clearT = 2.4; banner('CLEAR', `웨이브 ${G.wave} 돌파!`); sfx('clear'); }
-  if (G.clearT > 0) { G.clearT -= dt; if (G.clearT <= 0) { G.clearT = -1; startWave(); P.maxHp = stats().maxHp; P.hp = Math.min(P.maxHp, P.hp + P.maxHp * 0.35); pop(P.x, P.y - 110, 'LEVEL UP!', '#9aff8a', 26, true); for (let i = 0; i < allies.n; i++) { const a = allies.items[i]; if (a.on && !a.dead) { a.maxHp = Math.round(P.maxHp * 2 / 3); a.hp = Math.min(a.maxHp, a.hp + a.maxHp * 0.5); } } ring(P.x, P.y, 10, 140, 0.5, '#9aff8a', 5); } }
+  if (G.clearT > 0) { G.clearT -= dt; if (G.clearT <= 0) { G.clearT = -1; startWave(); P.maxHp = stats().maxHp; P.hp = Math.min(P.maxHp, P.hp + P.maxHp * 0.35); pop(P.x, P.y - 110, 'LEVEL UP!', '#9aff8a', 26, true); for (let i = 0; i < allies.n; i++) { const a = allies.items[i]; if (a.on && !a.dead) { a.maxHp = Math.round(P.maxHp * ALLY_K); a.hp = Math.min(a.maxHp, a.hp + a.maxHp * 0.5); } } ring(P.x, P.y, 10, 140, 0.5, '#9aff8a', 5); } }
 }
 function updateCoins(dt) {
   const C = coins.items;
@@ -2367,28 +2367,29 @@ $('bRetry').addEventListener('click', () => {
 });
 $('bRestart').addEventListener('click', () => { $('over').classList.add('hide'); $('hud').classList.add('hide'); $('ctrl').classList.add('hide'); resize(); G.state = 'title'; $('title').classList.remove('hide'); });
 /* ==================================================================
-   부하(아군): 금화로 고용, 내 힘의 2/3, 쓰러지면 사라짐
+   부하(아군): 금화로 고용(수 제한 없음), 내 힘의 2/5, 쓰러지면 사라짐
    ================================================================== */
-const ALLY_PRICE = 80, ALLY_MAX = 3;
+const ALLY_PRICE = 80, ALLY_K = 2 / 5;   // 부하 힘 = 내 힘의 2/5
 const ALOOK = {
   gun: look({ skin: '#eab896', hair: '#2a2a2a', hs: 'cowboy', hat: '#2a3a5a', top: '#3a4a6a', trim: '#9ad8ff', pants: '#2a2a3a', boots: '#3a2a1e', cape: '#2a3a5a', bracer: '#3a2a1e', neck: '#2a5ab0', bulk: 0.95 }),
   sword: look({ skin: '#eab896', hair: '#c89a5a', hs: 'hero', top: '#3a4a6a', vest: true, armsBare: true, bracer: '#4a3a2a', trim: '#9ad8ff', pants: '#2a2a3a', boots: '#4a3424', cape: '#2a5ab0', bulk: 0.95 }),
   fist: look({ skin: '#c88a62', hair: '#1a1a1a', hs: 'boxer', bare: true, trim: '#9ad8ff', pants: '#2a5ab0', shorts: true, boots: '#e8e4dc', band: '#2a5ab0', bulk: 1.08 })
 };
-const allies = makePool(ALLY_MAX, () => Object.assign(makeActor(), { kind: 'ally', hp: 1, maxHp: 1, st: 'free', cd: 0, combo: 0, atk: 0, hitDone: false, dead: false, alpha: 1, deadT: 0, inv: 0, slot: 0 }));
+const newAlly = () => Object.assign(makeActor(), { kind: 'ally', hp: 1, maxHp: 1, st: 'free', cd: 0, combo: 0, atk: 0, hitDone: false, dead: false, alpha: 1, deadT: 0, inv: 0, slot: 0, sx: 0, sy: 0 });
+const allies = makePool(4, newAlly);   // 모자라면 고용할 때만 늘림(프레임마다 생성 X)
 let allySeq = 0;
 function allyCount() { let n = 0; for (let i = 0; i < allies.n; i++) if (allies.items[i].on && !allies.items[i].dead) n++; return n; }
-function updAlly() { $('revN').textContent = allyCount() + '/' + ALLY_MAX; $('revP').textContent = ALLY_PRICE; }
+function updAlly() { $('revN').textContent = allyCount(); $('revP').textContent = ALLY_PRICE; }
 $('bRev').addEventListener('click', () => {
   initAudio();
   if (G.state !== 'play' || P.st === 'dead') return;
-  if (allyCount() >= ALLY_MAX) { sfx('no'); pop(P.x, P.y - 110, '부하는 최대 3명', '#9ad8ff', 18, true); return; }
   if (G.gold < ALLY_PRICE) { sfx('no'); pop(P.x, P.y - 110, `금화 $${ALLY_PRICE} 필요`, '#ff9a8a', 18, true); return; }
   let a = null; for (let i = 0; i < allies.n; i++) if (!allies.items[i].on) { a = allies.items[i]; a.slot = i; break; }
-  if (!a) return;
+  if (!a) { a = newAlly(); a.on = false; a.idx = a.slot = allies.n; allies.items.push(a); allies.n++; }
+  a.sy = a.slot % 3 - 1; a.sx = (a.slot / 3) | 0;   // 3명씩 줄지어 대형
   G.gold -= ALLY_PRICE; sfx('buy'); sfx('spawn');
-  a.on = true; a.dead = false; a.alpha = 1; a.x = clamp(P.x - P.face * 50, 40, AW - 40); a.y = clamp(P.y + (a.slot - 1) * 36, 40, AH - 30); a.z = 0; a.vx = a.vy = 0;
-  a.maxHp = a.hp = Math.round(P.maxHp * 2 / 3); a.st = 'free'; a.cd = 0.5; a.combo = 0; a.inv = 1; a.face = P.face; a.turn = 1; a.t = Math.random() * 9;
+  a.on = true; a.dead = false; a.alpha = 1; a.x = clamp(P.x - P.face * 50, 40, AW - 40); a.y = clamp(P.y + a.sy * 36, 40, AH - 30); a.z = 0; a.vx = a.vy = 0;
+  a.maxHp = a.hp = Math.round(P.maxHp * ALLY_K); a.st = 'free'; a.cd = 0.5; a.combo = 0; a.inv = 1; a.face = P.face; a.turn = 1; a.t = Math.random() * 9;
   setAnim(a, ANIM.spawn, 0.01); a.st = 'spawn'; a.at = 0; copyPose(a.disp, ANIM.spawn.keys[0].p);
   ring(a.x, a.y, 50, 6, 0.6, '#9ad8ff', 4); burst(a.x, a.y, 10, 24, '#9ad8ff', 160, 0.8, 4, 6, 120, true);
   pop(a.x, a.y - 100, '부하 합류!', '#9ad8ff', 20, true); updAlly();
@@ -2418,27 +2419,27 @@ function updateAllies(dt) {
       if (!a.hitDone && a.at >= A.hit[0]) {
         a.hitDone = true; a.vx = a.face * (G.cls === 'gun' ? -60 : 120);
         if (G.cls === 'gun') { const tg2 = tg || nearestEnemy(500, false), mx = a.x + a.face * 30, ang = tg2 ? Math.atan2(tg2.y - a.y, tg2.x - mx) : (a.face > 0 ? 0 : Math.PI);
-          bullet(mx, a.y, 56, ang, st.dmg * (2 / 3) * A.dmg, 'pbullet', 900, 260 / 900, 12, 0, 150, 'cyan'); muzzle(mx, a.y, 56, a.face, false); sfx('gun'); }
+          bullet(mx, a.y, 56, ang, st.dmg * ALLY_K * A.dmg, 'pbullet', 900, 260 / 900, 12, 0, 150, 'cyan'); muzzle(mx, a.y, 56, a.face, false); sfx('gun'); }
         else
         for (let j = 0; j < enemies.n; j++) {
           const e = E[j]; if (!e.on || e.dead || e.st === 'spawn' || e.lastHitA === a.atk) continue;
           const dx = (e.x - a.x) * a.face, dy = e.y - a.y;
-          if (dx > -16 && dx < st.range * 0.9 + e.def.r && Math.abs(dy) < 40 + e.def.r * 0.4 && e.z < 70) { e.lastHitA = a.atk; hitEnemy(e, Math.max(1, Math.round(st.dmg * (2 / 3) * A.dmg * (0.9 + Math.random() * 0.2))), a.face, A, false, false); }
+          if (dx > -16 && dx < st.range * 0.9 + e.def.r && Math.abs(dy) < 40 + e.def.r * 0.4 && e.z < 70) { e.lastHitA = a.atk; hitEnemy(e, Math.max(1, Math.round(st.dmg * ALLY_K * A.dmg * (0.9 + Math.random() * 0.2))), a.face, A, false, false); }
         }
       }
       if (a.at >= 1) { a.st = 'free'; setAnim(a, null, 0.12); }
     } else {
       if (tg) {
-        const dx = tg.x - a.x, dy = tg.y - a.y, want = G.cls === 'gun' ? 220 + a.slot * 30 : st.range * 0.6 + tg.def.r;
+        const dx = tg.x - a.x, dy = tg.y - a.y, want = G.cls === 'gun' ? 220 + (a.slot % 4) * 30 : st.range * 0.6 + tg.def.r;
         a.face = dx >= 0 ? 1 : -1;
-        if (G.cls === 'gun' ? (Math.abs(dx) > want + 40 || Math.abs(dx) < want - 80 || Math.abs(dy) > 60) : (Math.abs(dx) > want || Math.abs(dy) > 18)) { const gx = tg.x - a.face * want * 0.9, gy = tg.y + (a.slot - 1) * 8; const lx = gx - a.x, ly = gy - a.y, l = Math.hypot(lx, ly) || 1; tvx = lx / l * 190; tvy = ly / l * 150; }
+        if (G.cls === 'gun' ? (Math.abs(dx) > want + 40 || Math.abs(dx) < want - 80 || Math.abs(dy) > 60) : (Math.abs(dx) > want || Math.abs(dy) > 18)) { const gx = tg.x - a.face * want * 0.9, gy = tg.y + a.sy * 8 + a.sx * 6; const lx = gx - a.x, ly = gy - a.y, l = Math.hypot(lx, ly) || 1; tvx = lx / l * 190; tvy = ly / l * 150; }
         else if (a.cd <= 0) {
           a.combo = a.combo % 3 + 1; const A = ANIM[(cs ? 'a' : G.cls === 'fist' ? 'f' : 'g') + a.combo];
           a.st = 'attack'; setAnim(a, A, 0.05); a.atk = --allySeq; a.hitDone = false; a.cd = a.combo === 3 ? 1.0 : 0.3;
           sfx(cs ? 'swing' : 'jab');
         }
       } else {
-        const gx = P.x - P.face * (60 + a.slot * 22), gy = P.y + (a.slot - 1) * 42, lx = gx - a.x, ly = gy - a.y, l = Math.hypot(lx, ly);
+        const gx = P.x - P.face * (60 + a.sx * 40 + (a.sy + 1) * 8), gy = P.y + a.sy * 42, lx = gx - a.x, ly = gy - a.y, l = Math.hypot(lx, ly);
         if (l > 24) { tvx = lx / l * Math.min(220, l * 3); tvy = ly / l * Math.min(170, l * 3); }
         if (Math.abs(lx) > 6) a.face = lx > 0 ? 1 : -1;
       }

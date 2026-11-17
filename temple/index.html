@@ -175,7 +175,7 @@ canvas#c{position:fixed;inset:0;width:100%;height:100%;display:block;image-rende
       <button id="bMute" title="소리">🔊</button>
     </div></div>
 </div>
-<div id="bossBar" class="hide"><div class="nm" id="bossNm">타락한 신전 기사</div><div class="bar"><i id="bossLag"></i><i id="bossFill"></i></div></div>
+<div id="bossBar" class="hide"><div class="nm" id="bossNm">신전의 마수 바알로크</div><div class="bar"><i id="bossLag"></i><i id="bossFill"></i></div></div>
 <div id="combo"><div id="comboN">0</div><small>HITS</small></div>
 <div id="ctrl" class="hide"><div id="skRing"></div>
   <div class="btn hide" id="bUltR"><span id="ultIc">⚡</span><small>궁극기</small></div>
@@ -506,7 +506,9 @@ const LOOK = {
   maceK: look({ skin: '#c8a080', hair: '#333', hs: 'greathelm', top: '#5a6272', armor: 3, trim: '#d8a848', pants: '#3a3a46', boots: '#4a4a56', bracer: '#8a929c', tabard: '#2a6a3a', cape: '#2a6a3a', aura: 'gold', bulk: 1.2 }),
   reaper: look({ skin: '#ece4dc', hair: '#ddd', hs: 'reaper', top: '#1e1a28', robe: '#1a1624', trim: '#8a7ab8', pants: '#1a1624', boots: '#0e0c12', cape: '#2a2238', aura: 'purp', bulk: 0.96 }),
   ranger: look({ skin: '#e0b08a', hair: '#8a5a2a', hs: 'ranger', top: '#3a6a2a', armsBare: true, bracer: '#5a3a1e', trim: '#c8a050', pants: '#4a3a28', boots: '#3a2614', cape: '#2a4a1e', bulk: 0.95 }),
-  boss: look({ skin: '#8a8a96', hair: '#000', hs: 'horn', top: '#2a2a36', trim: '#c8962a', pants: '#1e1e28', boots: '#14141c', cape: '#4a0e18', armor: 4, eye: '#ff2a2a', bulk: 1.25, bracer: '#3a3a48' })
+  // 보스: 사람이 아닌 마수 — 뿔 달린 짐승 머리, 날개, 꼬리, 등가시, 발톱
+  boss: look({ skin: '#5e3a4e', hair: '#000', hs: 'beast', bare: true, trim: '#d8c8a8', pants: '#2a1a24', shorts: true, boots: '#3a2430', eye: '#ff2a2a', bulk: 1.45,
+    monster: true, wings: '#3a1a2a', tail: true, ridge: '#d8c8a8', claws: '#f0e6d0', magma: true })
 };
 const SWORDS = [
   { name: '낡은 철검', icon: '🗡️', dmg: 10, len: 36, blade: '#b8c0c8', guard: '#7a6a5a', glow: null, price: 0, type: 'sword' },
@@ -581,6 +583,21 @@ function boot(g, x, y, c, a) {
   if (!GC) { g.strokeStyle = OUT(); g.lineWidth = 1.2; g.stroke(); }
   g.restore();
 }
+// 마수 손: 굵은 손 + 갈고리 발톱 3개
+function claw(g, x, y, a, c, cc, bk) {
+  g.save(); g.translate(x, y); g.rotate(-a);
+  g.fillStyle = col(c); g.beginPath(); g.ellipse(0, 2, 3.4 * bk, 3.8 * bk, 0, 0, TAU); g.fill();
+  g.fillStyle = col(cc); for (let k = -1; k <= 1; k++) { g.beginPath(); g.moveTo(k * 2.4 - 1, 4.6); g.quadraticCurveTo(k * 3.4, 10, k * 2.4 + 3, 11); g.lineTo(k * 2.4 + 1.2, 4.6); g.closePath(); g.fill(); }
+  g.restore();
+}
+// 마수 발: 세 발가락 + 발톱
+function talon(g, x, y, c, cc, a) {
+  g.save(); g.translate(x, y); g.rotate(-a * 0.15);
+  g.fillStyle = col(c); g.beginPath(); g.moveTo(-3.6, -7); g.lineTo(3, -7); g.quadraticCurveTo(8, -3, 8.4, 0.4); g.lineTo(-4, 0.6); g.closePath(); g.fill();
+  if (!GC) { g.strokeStyle = OUT(); g.lineWidth = 1.2; g.stroke(); }
+  g.fillStyle = col(cc); for (let k = 0; k < 3; k++) { const fx = 2 + k * 2.6; g.beginPath(); g.moveTo(fx, -1); g.quadraticCurveTo(fx + 4, -0.6, fx + 4.6, 1.6); g.lineTo(fx, 0.8); g.closePath(); g.fill(); }
+  g.restore();
+}
 function drawGlove(g, w, hx, hy, a, t, far) {
   g.save(); g.translate(hx, hy); g.rotate(-a);
   const c = far ? shade(w.glove, -0.28) : w.glove;
@@ -637,6 +654,32 @@ function drawHead(g, L, t) {
     g.fillStyle = col(L.robe); g.beginPath(); g.moveTo(-7, 7); g.quadraticCurveTo(-9, -8, 0, -9); g.quadraticCurveTo(8, -8, 7.5, 2); g.lineTo(5, 7); g.closePath(); g.fill();
     g.fillStyle = GC || (FL ? '#fff' : '#0a0610'); g.beginPath(); g.ellipse(3, 0.5, 4, 5, 0, 0, TAU); g.fill();
     if (!GC) { g.fillStyle = L.eye; g.fillRect(4.2, -0.6, 2.2, 1.3); g.globalCompositeOperation = 'lighter'; g.globalAlpha = 0.7; g.drawImage(GL.red, 1, -4, 9, 8); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; }
+    return;
+  }
+  if (hs === 'beast') {
+    // 짐승 머리: 뒤로 휜 큰 뿔, 앞으로 튀어나온 주둥이, 벌어지는 턱, 이빨, 빛나는 눈
+    const jaw = 0.18 + Math.max(0, Math.sin(t * 2.2)) * 0.22;
+    g.fillStyle = col('#d8c8a8');
+    g.beginPath(); g.moveTo(-2, -5); g.quadraticCurveTo(-14, -10, -15, -22); g.quadraticCurveTo(-10, -14, -1, -9); g.closePath(); g.fill();   // 먼 뿔
+    if (!GC) { g.strokeStyle = OUT(); g.lineWidth = 1; g.stroke(); }
+    g.save(); g.translate(2, 4); g.rotate(jaw);   // 아래턱
+    g.fillStyle = col(L.skinD); g.beginPath(); g.moveTo(-4, 0); g.lineTo(11, 1); g.lineTo(10, 3.6); g.quadraticCurveTo(2, 5, -4, 3); g.closePath(); g.fill();
+    if (!GC) { g.fillStyle = '#f4ecd8'; for (let k = 0; k < 3; k++) { g.beginPath(); g.moveTo(3 + k * 2.6, 1); g.lineTo(4.2 + k * 2.6, -1.6); g.lineTo(5.2 + k * 2.6, 1); g.fill(); } }
+    g.restore();
+    if (!GC) { g.fillStyle = '#3a0a10'; g.beginPath(); g.moveTo(1, 2); g.lineTo(12, 2.4); g.lineTo(11, 5 + jaw * 8); g.lineTo(1, 4.6); g.closePath(); g.fill(); }   // 입 속
+    g.fillStyle = col(L.skin); g.strokeStyle = OUT(); g.lineWidth = 1.2;
+    g.beginPath(); g.moveTo(-6.5, 2); g.quadraticCurveTo(-8, -7, 0, -7.6); g.quadraticCurveTo(5, -7.6, 7, -3.6); g.lineTo(13.6, -1.2); g.quadraticCurveTo(14.6, 1.6, 12.4, 2.6); g.lineTo(2, 2.8); g.quadraticCurveTo(-2, 7, -6.5, 2); g.closePath(); g.fill(); if (!GC) g.stroke();
+    if (!GC) {
+      g.fillStyle = '#f4ecd8'; for (let k = 0; k < 4; k++) { g.beginPath(); g.moveTo(3 + k * 2.4, 2.6); g.lineTo(4 + k * 2.4, 5.4 - (k === 0 ? -1.4 : 0)); g.lineTo(5 + k * 2.4, 2.6); g.fill(); }   // 윗니 + 송곳니
+      g.fillStyle = L.skinD; g.beginPath(); g.moveTo(-6, -1); g.quadraticCurveTo(-2, -3, 4, -4.8); g.lineTo(6.6, -3.4); g.quadraticCurveTo(0, -2, -5.6, 1.6); g.fill();   // 이마 주름
+      g.fillStyle = '#140810'; g.beginPath(); g.arc(13, -0.6, 0.8, 0, TAU); g.fill();   // 콧구멍
+      g.fillStyle = '#ffd040'; g.beginPath(); g.moveTo(3, -3.4); g.lineTo(7, -2.6); g.lineTo(3.4, -1.6); g.closePath(); g.fill();   // 눈
+      g.globalCompositeOperation = 'lighter'; g.globalAlpha = 0.6 + Math.sin(t * 5) * 0.3; g.drawImage(GL.red, -3, -9, 16, 13); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
+      g.strokeStyle = L.skinH; g.lineWidth = 0.9; g.globalAlpha = 0.7; g.beginPath(); g.moveTo(-4, -6.4); g.quadraticCurveTo(4, -8, 7, -3.8); g.lineTo(13, -1.6); g.stroke(); g.globalAlpha = 1;
+    }
+    g.fillStyle = col('#ece0c4');
+    g.beginPath(); g.moveTo(1, -6); g.quadraticCurveTo(-8, -18, -2, -26); g.quadraticCurveTo(2, -30, 6, -27); g.quadraticCurveTo(0, -24, -1, -18); g.quadraticCurveTo(0, -12, 5, -6.4); g.closePath(); g.fill();   // 가까운 뿔
+    if (!GC) { g.strokeStyle = OUT(); g.lineWidth = 1.2; g.stroke(); g.strokeStyle = '#a89878'; g.lineWidth = 0.8; for (let k = 0; k < 3; k++) { g.beginPath(); g.moveTo(-3.6 - k * 0.6, -12 - k * 4); g.lineTo(0.6 - k * 0.4, -11 - k * 4.4); g.stroke(); } }
     return;
   }
   if (hs === 'horn') {
@@ -771,6 +814,11 @@ function drawTorso(g, hipX, hipY, P, L, t) {
       // 림라이트
       g.strokeStyle = hi; g.lineWidth = 1.2; g.globalAlpha = 0.85; g.beginPath(); g.moveTo(9.6 * s, -22); g.quadraticCurveTo(11.2 * s, -15, 7.6 * s, -11); g.quadraticCurveTo(6.2 * s, -5, 5.2 * s, -0.5); g.stroke(); g.globalAlpha = 1;
       g.fillStyle = hi; g.globalAlpha = 0.35; g.beginPath(); g.ellipse(6.6 * s, -19, 2.6 * s, 2, -0.4, 0, TAU); g.fill(); g.globalAlpha = 1;
+      if (L.magma) {   // 갈라진 피부 사이로 끓는 용암 핏줄
+        g.globalCompositeOperation = 'lighter'; g.strokeStyle = '#ff5a1a'; g.lineWidth = 1; g.globalAlpha = 0.6 + Math.sin(t * 3) * 0.3;
+        g.beginPath(); g.moveTo(5 * s, -22); g.lineTo(3 * s, -17); g.lineTo(4.6 * s, -13); g.moveTo(3 * s, -17); g.lineTo(-1 * s, -15); g.moveTo(-4 * s, -20); g.lineTo(-1 * s, -15); g.lineTo(0, -8); g.stroke();
+        g.drawImage(GL.red, 0, -22, 10 * s, 10); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
+      }
     } else if (L.plate) {
       // 판금 흉갑: 가슴 판 하이라이트, 복부 판금 띠, 금장 테두리, 사자 문장
       g.fillStyle = '#d8e0e8'; g.globalAlpha = 0.55; g.beginPath(); g.ellipse(6.4 * s, -18.5, 3.4 * s, 4.2, -0.3, 0, TAU); g.fill(); g.globalAlpha = 1;
@@ -829,6 +877,31 @@ function drawFigure(g, x, y, z, sc, face, turn, P, L, w, flash, t, capeA, ghost,
     g.lineTo(ex + 7, ey + 2); g.quadraticCurveTo(shX - 2, shY + 22, shX + 3, shY); g.closePath(); g.fill();
     if (!GC) { g.strokeStyle = OUT(); g.lineWidth = 1.2; g.stroke(); }
   }
+  if (L.wings) {   // 찢어진 박쥐 날개 (두 장, 천천히 퍼덕임)
+    const fl = Math.sin(t * 3.2) * 0.35 + Math.sin(capeA) * 0.3;
+    for (let k = 0; k < 2; k++) {
+      const ox = shX - 3 - k * 2, oy = shY + 2, sp = 1 - k * 0.18, a = -0.5 - fl * (1 - k * 0.4) - k * 0.25;
+      g.save(); g.translate(ox, oy); g.rotate(a);
+      g.fillStyle = col(k ? shade(L.wings, -0.35) : L.wings);
+      g.beginPath(); g.moveTo(0, 0); g.lineTo(-10 * sp, -30 * sp); g.lineTo(-38 * sp, -34 * sp);
+      g.lineTo(-32 * sp, -18 * sp); g.lineTo(-40 * sp, -10 * sp); g.lineTo(-30 * sp, -2 * sp); g.lineTo(-34 * sp, 8 * sp); g.lineTo(-20 * sp, 6 * sp); g.lineTo(-14 * sp, 16 * sp); g.closePath(); g.fill();
+      if (!GC) { g.strokeStyle = OUT(); g.lineWidth = 1.1; g.stroke();
+        g.strokeStyle = k ? '#2a1420' : '#6a3a4e'; g.lineWidth = 1.8; g.beginPath(); g.moveTo(0, 0); g.lineTo(-10 * sp, -30 * sp); g.lineTo(-38 * sp, -34 * sp);
+        g.moveTo(-10 * sp, -30 * sp); g.lineTo(-32 * sp, -18 * sp); g.moveTo(-10 * sp, -30 * sp); g.lineTo(-30 * sp, -2 * sp); g.moveTo(-10 * sp, -30 * sp); g.lineTo(-20 * sp, 6 * sp); g.stroke(); }
+      g.restore();
+    }
+  }
+  if (L.tail) {   // 가시 꼬리: 엉덩이에서 뒤로 뻗어 살랑
+    let tx = hipX - 4 * bk, ty = hipY + 2, ta = -1.9;
+    g.fillStyle = col(L.skinD);
+    for (let k = 0; k < 7; k++) {
+      ta += 0.16 + Math.sin(t * 3 - k * 0.7) * 0.18; const r = 4.2 * bk * (1 - k * 0.12), l = 6.5;
+      const nx = tx + Math.sin(ta) * l, ny = ty + Math.cos(ta) * l * -1;
+      g.beginPath(); g.arc(nx, ny, r, 0, TAU); g.fill(); tx = nx; ty = ny;
+    }
+    g.fillStyle = col(L.ridge || '#d8c8a8'); g.beginPath(); g.moveTo(tx, ty - 3); g.lineTo(tx - 9, ty - 1 + Math.sin(t * 3) * 2); g.lineTo(tx, ty + 3); g.closePath(); g.fill();
+    if (!GC) { g.strokeStyle = OUT(); g.lineWidth = 1; g.stroke(); }
+  }
   if (L.scarf) {
     const nx = shX + Math.sin(P.lean) * 3, ny = shY - 3, ca = capeA;
     g.strokeStyle = col(L.cape); g.lineWidth = 3.2;
@@ -855,21 +928,28 @@ function drawFigure(g, x, y, z, sc, face, turn, P, L, w, flash, t, capeA, ghost,
     const oy = LO.fy - 6 + Math.sin(t * 4) * 1.5;
     g.globalCompositeOperation = 'lighter'; g.globalAlpha *= 0.9; g.drawImage(GL[L.orb], LO.fx - 12, oy - 12, 24, 24); g.globalAlpha = Math.min(1, g.globalAlpha / 0.9); g.globalCompositeOperation = 'source-over';
     g.fillStyle = '#e8d0ff'; g.beginPath(); g.arc(LO.fx, oy, 3, 0, TAU); g.fill();
-  } else if (!GC) { g.fillStyle = col(L.skinD); g.beginPath(); g.arc(LO.fx, LO.fy, 2.4 * bk, 0, TAU); g.fill(); }
+  } else if (L.claws) claw(g, LO.fx, LO.fy, P.fU + P.fF, L.skinD, L.claws, bk);
+  else if (!GC) { g.fillStyle = col(L.skinD); g.beginPath(); g.arc(LO.fx, LO.fy, 2.4 * bk, 0, TAU); g.fill(); }
   // 먼 다리
   mlimb(g, hipX - 1.5, hipY, P.fT, 23, P.fT + P.fS, 23, LW1, LW2, L.pantsD, shinD, null, null, false, null);
-  boot(g, LO.fx, LO.fy, shade(L.boots, -0.3), P.fT + P.fS);
+  if (L.monster) talon(g, LO.fx, LO.fy, L.skinDD, L.claws, P.fT + P.fS); else boot(g, LO.fx, LO.fy, shade(L.boots, -0.3), P.fT + P.fS);
   if (L.robe) { g.fillStyle = col(shade(L.robe, -0.25)); g.beginPath(); g.moveTo(hipX - 6, hipY - 2); g.lineTo(hipX - 12 - Math.sin(capeA) * 6, hipY + 30); g.lineTo(hipX + 4, hipY + 30); g.closePath(); g.fill(); }
   // 몸통 + 머리
   drawTorso(g, hipX, hipY, P, L, t);
+  if (L.ridge) {   // 등줄기 가시
+    g.save(); g.translate(hipX, hipY); g.rotate(P.lean); g.fillStyle = col(L.ridge);
+    for (let k = 0; k < 5; k++) { const yy = -6 - k * 4.6, xx = -6.4 * bk - Math.sin(k / 4 * Math.PI) * 2.4 * bk, h = 4 + Math.sin(k / 4 * Math.PI) * 4;
+      g.beginPath(); g.moveTo(xx + 1, yy - 2.2); g.lineTo(xx - h, yy + 1.4); g.lineTo(xx + 1, yy + 2.2); g.closePath(); g.fill(); if (!GC) { g.strokeStyle = OUT(); g.lineWidth = 0.9; g.stroke(); } }
+    g.restore();
+  }
   // 허리 아래 (반바지/튜닉/로브)
   if (L.robe) { g.fillStyle = col(L.robe); g.beginPath(); g.moveTo(hipX - 6, hipY - 2); g.lineTo(hipX + 7, hipY - 2); g.lineTo(hipX + 10 + Math.sin(P.nT) * 6, hipY + 28); g.lineTo(hipX - 8, hipY + 30); g.closePath(); g.fill(); }
   else if (L.shorts) { g.fillStyle = col(L.pants); g.beginPath(); g.moveTo(hipX - 6 * bk, hipY - 1); g.lineTo(hipX + 6.2 * bk, hipY - 1); g.lineTo(hipX + 7 * bk, hipY + 6); g.lineTo(hipX - 7 * bk, hipY + 6); g.closePath(); g.fill(); }
   else { g.fillStyle = col(L.topD || L.pantsD); g.beginPath(); g.moveTo(hipX - 5.8 * bk, hipY - 1); g.lineTo(hipX + 6.2 * bk, hipY - 1); g.lineTo(hipX + 8 * bk, hipY + 8); g.lineTo(hipX - 7.6 * bk, hipY + 8); g.closePath(); g.fill(); }
   // 가까운 다리
   mlimb(g, hipX + 1.5, hipY, P.nT, 23, P.nT + P.nS, 23, LW1, LW2, L.pants, shinC, shade(L.pants, 0.3), L.shorts ? L.skinH : shade(L.pants, 0.25), false, null);
-  if (L.shorts && !GC) { g.strokeStyle = '#ffffff'; g.lineWidth = 1.4; const kx = LO.kx, ky = LO.ky; g.beginPath(); g.moveTo(hipX + 1.5 + Math.sin(P.nT) * 9 - 4, hipY + Math.cos(P.nT) * 9); g.lineTo(hipX + 1.5 + Math.sin(P.nT) * 9 + 4, hipY + Math.cos(P.nT) * 9); g.stroke(); }
-  boot(g, LO.fx, LO.fy, L.boots, P.nT + P.nS);
+  if (L.shorts && !L.monster && !GC) { g.strokeStyle = '#ffffff'; g.lineWidth = 1.4; const kx = LO.kx, ky = LO.ky; g.beginPath(); g.moveTo(hipX + 1.5 + Math.sin(P.nT) * 9 - 4, hipY + Math.cos(P.nT) * 9); g.lineTo(hipX + 1.5 + Math.sin(P.nT) * 9 + 4, hipY + Math.cos(P.nT) * 9); g.stroke(); }
+  if (L.monster) talon(g, LO.fx, LO.fy, L.skinD, L.claws, P.nT + P.nS); else boot(g, LO.fx, LO.fy, L.boots, P.nT + P.nS);
   if (L.tabard) {
     const sw = Math.sin(P.nT) * 7, sw2 = Math.sin(P.fT) * 3;
     g.fillStyle = col(L.tabard); g.beginPath(); g.moveTo(hipX - 0.5, hipY - 2); g.lineTo(hipX + 8.4, hipY - 2); g.lineTo(hipX + 9 + sw, hipY + 19); g.lineTo(hipX + 4 + sw * 0.8, hipY + 22); g.lineTo(hipX + 0.5 + sw2, hipY + 19); g.closePath(); g.fill();
@@ -1645,7 +1725,7 @@ const EDEF = {
   maceK: { name: '철퇴 기사', hp: 110, spd: 80, dmg: 18, r: 19, range: 82, wind: 0.62, move: 'slam', coins: 13, poise: 50, look: 'maceK', wpn: 'mace', sc: 1.08, armored: true },
   reaper: { name: '낫의 사도', hp: 70, spd: 102, dmg: 14, r: 17, range: 108, wind: 0.52, move: 'sweep', coins: 10, poise: 24, look: 'reaper', wpn: 'scythe', sc: 1.05 },
   ranger: { name: '석궁 사수', hp: 40, spd: 100, dmg: 10, r: 15, range: 400, wind: 0.7, move: 'shoot', coins: 8, poise: 10, look: 'ranger', wpn: 'xbow', sc: 1, ranged: true },
-  boss: { name: '타락한 신전 기사', hp: 820, spd: 115, dmg: 24, r: 30, range: 110, wind: 0.6, move: 'slash', coins: 120, poise: 160, look: 'boss', wpn: 'great', sc: 1.5, armored: true }
+  boss: { name: '신전의 마수 바알로크', hp: 820, spd: 115, dmg: 24, r: 30, range: 110, wind: 0.6, move: 'slash', coins: 120, poise: 160, look: 'boss', wpn: 'great', sc: 1.5, armored: true }
 };
 function waveList(w) {
   const isBoss = w % 4 === 0;

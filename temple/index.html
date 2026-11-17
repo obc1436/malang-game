@@ -153,7 +153,7 @@ canvas#c{position:fixed;inset:0;width:100%;height:100%;display:block;image-rende
 <div id="hud" class="hide">
   <div id="hpWrap"><div class="nm" id="clsNm">⚔ 순례 검사</div><div class="bar"><i id="hpLag"></i><i id="hpFill"></i><b id="hpT">100 / 100</b></div></div>
   <div id="mid"><div id="waveT">WAVE 1</div><div id="enemT">남은 적 5</div></div>
-  <div id="right"><div id="gold"><div class="c"></div><span id="goldT">0</span></div><button class="hb" id="bMute">🔊</button></div>
+  <div id="right"><div id="gold"><div class="c"></div><span id="goldT">0</span></div><button class="hb" id="bRev" style="width:auto;padding:0 8px;font-size:12px;font-weight:900;color:#ffd0d8;border-color:#d84a6a">❤️‍🔥 <span id="revN">0</span> · $<span id="revP">150</span></button><button class="hb" id="bMute">🔊</button></div>
 </div>
 <div id="bossBar" class="hide"><div class="nm" id="bossNm">타락한 신전 기사</div><div class="bar"><i id="bossLag"></i><i id="bossFill"></i></div></div>
 <div id="combo"><div id="comboN">0</div><small>HITS</small></div>
@@ -1093,7 +1093,8 @@ function updateSkillBtns(dt) {
 function weapon() { return G.cls === 'sword' ? SWORDS[G.wpn] : FISTS[G.wpn]; }
 function stats() {
   const w = weapon(), sw = G.cls === 'sword';
-  return { dmg: w.dmg, range: sw ? 70 + w.len * 0.55 : 62 + G.wpn * 2, maxHp: 100 + G.armor * 30, spd: (sw ? 210 : 225) * (1 + G.boots * 0.08), dashCd: [0.7, 0.58, 0.48, 0.38][G.boots],
+  const lv = Math.max(0, G.wave - 1);
+  return { dmg: w.dmg * (1 + lv * 0.12), range: sw ? 70 + w.len * 0.55 : 62 + G.wpn * 2, maxHp: 100 + lv * 15, spd: (sw ? 210 : 225) * (1 + G.boots * 0.08), dashCd: [0.7, 0.58, 0.48, 0.38][G.boots],
     skMul: 1 + G.mast * 0.25, cdMul: 1 - G.mast * 0.15 };
 }
 function base() { return G.cls === 'sword' ? S : FG; }
@@ -1402,8 +1403,9 @@ function spawnEnemy(type) {
   if (type === 'boss') pt = { x: AW / 2, y: 80 };
   e.type = type; e.def = d; e.x = pt.x + (Math.random() - 0.5) * 30; e.y = pt.y + (Math.random() - 0.5) * 20; e.z = 0; e.vx = e.vy = e.vz = 0;
   e.boss = type === 'boss';
-  e.maxHp = e.hp = Math.round(d.hp * 1.35 * (e.boss ? (1 + Math.floor(w / 4 - 1) * 0.6) : hs));
-  e.dmgV = Math.round(d.dmg * 1.5 * (1 + (w - 1) * 0.1)); e.spd = d.spd * (1 + Math.min(0.35, (w - 1) * 0.025));
+  const ps = stats(), K = { cultist: 0.6, bandit: 0.75, lancer: 0.85, brute: 1.4, boss: 1 }[type];
+  if (e.boss) { e.maxHp = e.hp = Math.round(d.hp * 1.35 * (1 + Math.floor(w / 4 - 1) * 0.6)); e.dmgV = Math.round(d.dmg * 1.5 * (1 + (w - 1) * 0.1)); }
+  else { e.maxHp = e.hp = Math.round(ps.maxHp * (2 / 3) * K); e.dmgV = Math.max(4, Math.round(ps.dmg * (2 / 3) * K)); } e.spd = d.spd * (1 + Math.min(0.35, (w - 1) * 0.025));
   e.poise = e.maxPoise = d.poise; e.scale = d.sc; e.look = LOOK[d.look]; e.wpn = EWPN[d.wpn];
   e.st = 'spawn'; e.stT = e.boss ? 1.6 : 0.85; e.cd = 0.8 + Math.random(); e.lastHit = -1; e.dead = false; e.alpha = 1; e.flash = 0; e.enraged = false; e.sq = 0;
   e.face = e.x < P.x ? 1 : -1; e.turn = 1; e.t = Math.random() * 10; e.mv = 0; e.ph = 0; e.holdPose = null; e.strafe = Math.random() < 0.5 ? 1 : -1; e.strafeT = 1 + Math.random() * 2;
@@ -1499,7 +1501,7 @@ function hurtPlayer(dmg, dir) {
   G.combo = 0; comboBump(); P.ult = Math.min(100, P.ult + 3);
   redF = 0.45; addShake(12); addStop(0.09); sfx('hurt');
   pop(P.x, P.y - 100, '-' + dmg, '#ff4a4a', 26, true); sparks(P.x, P.y, 50, -dir, 10, '#ff8a7a', 300);
-  if (P.hp <= 0) { P.hp = 0; P.st = 'dead'; setAnim(P, ANIM.die, 0.05); P.at = 0; slow = 0.25; slowT = 1.4; setTimeout(gameOver, 1600); return; }
+  if (P.hp <= 0) { P.hp = 0; P.st = 'dead'; setAnim(P, ANIM.die, 0.05); P.at = 0; slow = 0.25; slowT = 1.4; setTimeout(() => { if (G.revives > 0) revive(); else gameOver(); }, 1600); return; }
   P.st = 'hurt'; setAnim(P, ANIM.hurt, 0.03); P.buf = null;
 }
 function updateEnemies(dt) {
@@ -1626,7 +1628,7 @@ function updateWave(dt) {
     const bossW = G.wave % 4 === 0, gate = bossW && G.toSpawn.length <= 2 && G.boss && G.boss.hp > G.boss.maxHp * 0.55;
     if (G.spawnT <= 0 && !gate && G.freeze <= 0) { spawnEnemy(G.toSpawn.shift()); G.spawnT = bossW ? 1.2 : 0.55; }
   } else if (G.alive <= 0 && G.clearT === 0) { G.clearT = 2.4; banner('CLEAR', `웨이브 ${G.wave} 돌파!`); sfx('clear'); }
-  if (G.clearT > 0) { G.clearT -= dt; if (G.clearT <= 0) { G.clearT = -1; openShop(); } }
+  if (G.clearT > 0) { G.clearT -= dt; if (G.clearT <= 0) { G.clearT = -1; startWave(); P.maxHp = stats().maxHp; P.hp = Math.min(P.maxHp, P.hp + P.maxHp * 0.35); pop(P.x, P.y - 110, 'LEVEL UP!', '#9aff8a', 26, true); ring(P.x, P.y, 10, 140, 0.5, '#9aff8a', 5); } }
 }
 function updateCoins(dt) {
   const C = coins.items;
@@ -2002,8 +2004,8 @@ function clearWorld() {
   for (const k in hc) hc[k] = -1; hc.full = null;
 }
 function newGame() {
-  Object.assign(G, { wave: 0, gold: 0, totalGold: 0, kills: 0, maxCombo: 0, wpn: 0, armor: 0, boots: 0, mast: 0, bossCount: 0, deaths: 0 });
-  P.ult = 0; clearWorld(); updatePlook(); P.maxHp = P.hp = stats().maxHp;
+  Object.assign(G, { revives: 0, wave: 0, gold: 0, totalGold: 0, kills: 0, maxCombo: 0, wpn: 0, armor: 0, boots: 0, mast: 0, bossCount: 0, deaths: 0 });
+  P.ult = 0; clearWorld(); updatePlook(); P.maxHp = P.hp = stats().maxHp; updRev();
 }
 function enterGame() {
   initAudio();
@@ -2020,6 +2022,20 @@ $('bRetry').addEventListener('click', () => {
   G.wave = w - 1; enterGame(); startWave();
 });
 $('bRestart').addEventListener('click', () => { $('over').classList.add('hide'); $('hud').classList.add('hide'); $('ctrl').classList.add('hide'); resize(); G.state = 'title'; $('title').classList.remove('hide'); });
+const REV_PRICE = 150;
+function updRev() { $('revN').textContent = G.revives; $('revP').textContent = REV_PRICE; }
+$('bRev').addEventListener('click', () => {
+  initAudio();
+  if (G.gold < REV_PRICE) { sfx('no'); pop(P.x, P.y - 110, `금화 $${REV_PRICE} 필요`, '#ff9a8a', 15); return; }
+  G.gold -= REV_PRICE; G.revives++; updRev(); sfx('buy'); pop(P.x, P.y - 110, '부활권 +1', '#ffb0c0', 20, true);
+});
+function revive() {
+  G.revives--; updRev();
+  P.st = 'free'; P.A = null; P.hp = P.maxHp; P.inv = 2.5; setAnim(P, null, 0.3);
+  const E = enemies.items; for (let i = 0; i < enemies.n; i++) { const e = E[i]; if (e.on && !e.dead && e.st !== 'spawn') { const d = e.x >= P.x ? 1 : -1; e.vx = d * 600; if (!e.boss) { e.st = 'down'; e.stT = ANIM.down.dur; setAnim(e, ANIM.down, 0.04); } } }
+  ring(P.x, P.y, 10, 320, 0.8, '#ffb0c0', 10); burst(P.x, P.y, 40, 50, '#ffd0d8', 420, 0.9, 4, 6, 220, true);
+  whiteF = 0.6; addShake(14); sfx('perfect'); banner('부활!', `남은 부활권 ${G.revives}개`);
+}
 $('bMute').addEventListener('click', (e) => { muted = !muted; e.currentTarget.textContent = muted ? '🔇' : '🔊'; if (AC && !muted) bgmNext = AC.currentTime + 0.1; });
 
 /* --- 타이틀: 직업 선택 카드 데모 --- */

@@ -436,9 +436,9 @@ const ANIM = {
   f1: seq(0.19, [[0, FG], [0.4, PL.F_JAB, 'i'], [1, FG, 'io']], { hit: [0.3, 0.6], dmg: 0.75, kb: 150, poise: 8, lunge: 120, snd: 'punch', stop: 0.045, shake: 3, range: 1 }),
   f2: seq(0.23, [[0, FG], [0.4, PL.F_CROSS, 'i'], [1, FG, 'io']], { hit: [0.3, 0.6], dmg: 1.0, kb: 210, poise: 12, lunge: 140, snd: 'punch', stop: 0.055, shake: 4, range: 1.05 }),
   f3: seq(0.42, [[0, FG], [0.3, PL.F_UW, 'o'], [0.5, PL.F_UP, 'i'], [0.8, PL.F_UP], [1, FG, 'io']], { hit: [0.42, 0.62], dmg: 1.9, kb: 260, launch: 330, poise: 40, lunge: 170, heavy: true, snd: 'heavy', stop: 0.11, shake: 9, range: 1.05 }),
-  g1: seq(0.2, [[0, GS], [0.3, GP.N, 'o'], [0.5, GP.NR, 'o'], [1, GS, 'io']], { hit: [0.32, 0.34], shot: 1, dmg: 0.85, kb: 130, poise: 6, lunge: 0, range: 6, stop: 0.03, shake: 2 }),
-  g2: seq(0.2, [[0, GS], [0.3, GP.F, 'o'], [0.5, GP.FR, 'o'], [1, GS, 'io']], { hit: [0.32, 0.34], shot: 1, dmg: 0.85, kb: 130, poise: 6, lunge: 0, range: 6, stop: 0.03, shake: 2 }),
-  g3: seq(0.32, [[0, GS], [0.3, GP.B, 'o'], [0.5, GP.BR, 'o'], [1, GS, 'io']], { hit: [0.32, 0.34], shot: 2, dmg: 1.15, kb: 260, poise: 22, heavy: true, lunge: 0, range: 6, stop: 0.06, shake: 5 }),
+  g1: seq(0.2, [[0, GS], [0.3, GP.N, 'o'], [0.5, GP.NR, 'o'], [1, GS, 'io']], { hit: [0.32, 0.34], shot: 1, dmg: 0.85, kb: 130, poise: 6, lunge: 0, range: 3, stop: 0.03, shake: 2 }),
+  g2: seq(0.2, [[0, GS], [0.3, GP.F, 'o'], [0.5, GP.FR, 'o'], [1, GS, 'io']], { hit: [0.32, 0.34], shot: 1, dmg: 0.85, kb: 130, poise: 6, lunge: 0, range: 3, stop: 0.03, shake: 2 }),
+  g3: seq(0.32, [[0, GS], [0.3, GP.B, 'o'], [0.5, GP.BR, 'o'], [1, GS, 'io']], { hit: [0.32, 0.34], shot: 2, dmg: 1.15, kb: 260, poise: 22, heavy: true, lunge: 0, range: 3, stop: 0.06, shake: 5 }),
   kick: seq(0.4, [[0, S], [0.32, PL.K_CH, 'o'], [0.5, PL.K_EXT, 'i'], [0.72, PL.K_EXT], [1, S, 'io']], { hit: [0.42, 0.66], dmg: 0.7, kb: 450, poise: 60, lunge: 110, kick: true, snd: 'kick', stop: 0.08, shake: 6, range: 0.9 }),
   dash: seq(0.24, [[0, PL.DASH], [1, PL.DASH]]),
   thrust: seq(0.4, [[0, PL.SW_THW], [0.38, PL.SW_TH, 'i'], [0.7, PL.SW_TH], [1, S, 'io']], { hit: [0.28, 0.55], dmg: 1.6, kb: 340, poise: 30, lunge: 440, snd: 'slash', stop: 0.085, shake: 6, range: 1.25 }),
@@ -1291,7 +1291,7 @@ function startSkill(i, nm) {
   const list = SKL(), s = list[i];
   const st = stats();
   P.st = 'skill'; P.skill = s; setAnim(P, s.A, 0.05); P.prevAt = -0.001; P.turn = 1; P.z = 0; trail.n = 0;
-  P.lockT = autoFace(G.cls === 'gun' ? 600 : st.range * 1.6 + 160);
+  P.lockT = autoFace(G.cls === 'gun' ? GUN_RANGE + 80 : st.range * 1.6 + 160);
   if (s.inv) P.inv = Math.max(P.inv, s.A.dur * 0.9);
   if (nm) skillName(nm); sfx('skill');
   const ac = CC[G.cls];
@@ -1406,9 +1406,9 @@ function skillFx(f) {
       burst(gx, gy, 0, 10, G.cls === 'sword' ? '#fff4c8' : '#ffc88a', 160, 0.4, 2.5, 5, 0, true); buzz(18);
       if (G.cls === 'gun') burst(gx, gy, 0, 8, '#c8c8c8', 30, 1.0, 5, 6, 40); break; }
     case 'aim': ring(P.x + P.face * 40, P.y, 4, 40, 0.5, '#9ae8ff', 2); break;
-    case 'deadmark': slow = 0.35; slowT = 0.55; darkF = Math.max(darkF, 0.4); aliveEnemiesView((e) => { ring(e.x, e.y, 50, 14, 0.5, '#ff3a3a', 3); pop(e.x, e.y - 110, '◎', '#ff4a4a', 26); }); sfx('perfect'); buzz([20, 40, 20]); break;
+    case 'deadmark': slow = 0.35; slowT = 0.55; darkF = Math.max(darkF, 0.4); aliveEnemiesView((e) => { if (Math.hypot(e.x - P.x, (e.y - P.y) * 1.6) > 420) return; ring(e.x, e.y, 50, 14, 0.5, '#ff3a3a', 3); pop(e.x, e.y - 110, '◎', '#ff4a4a', 26); }); sfx('perfect'); buzz([20, 40, 20]); break;
     case 'deadeye': { const mx = P.x + P.face * 34, mz = 60; let n = 0;
-      aliveEnemiesView((e) => { const o = take(projs); if (o) { o.type = 'tracer'; o.x = mx; o.y = P.y; o.z = mz; o.x2 = e.x; o.y2 = e.y; o.life = o.max = 0.22; o.delay = n * 0.05; o.vx = o.vy = 0; o.dmg = 0; }
+      aliveEnemiesView((e) => { if (Math.hypot(e.x - P.x, (e.y - P.y) * 1.6) > 420) return; const o = take(projs); if (o) { o.type = 'tracer'; o.x = mx; o.y = P.y; o.z = mz; o.x2 = e.x; o.y2 = e.y; o.life = o.max = 0.22; o.delay = n * 0.05; o.vx = o.vy = 0; o.dmg = 0; }
         n++; hitEnemy(e, Math.round(stats().dmg * 2.8 * stats().skMul * (0.9 + Math.random() * 0.2)), e.x >= P.x ? 1 : -1, { kb: 320, poise: 60, launch: 200, stop: 0.03, shake: 6, heavy: true, snd: 'gunhit' }, true, true); });
       muzzle(mx, P.y, mz, P.face, true); sfx('shotgun'); sfx('thunder'); buzz(120); whiteF = 0.3; addShake(16); cam.punch = 0.1; break; }
     case 'charge': for (let i = 0; i < 24; i++) { const p = takeF(parts), a = Math.random() * TAU, r = 80 + Math.random() * 40; p.x = P.x + Math.cos(a) * r; p.y = P.y + Math.sin(a) * r * 0.5; p.z = 45 + (Math.random() - 0.5) * 60; p.vx = -Math.cos(a) * r * 3; p.vy = -Math.sin(a) * r * 1.5; p.vz = 0; p.life = p.max = 0.32; p.size = 2.5; p.col = G.cls === 'sword' ? '#9ae8ff' : '#ffb04a'; p.kind = 8; p.add = true; } sfx('ki'); break;
@@ -1433,7 +1433,8 @@ function doHit(H, st, rMul, all, dmgMul, isSkill) {
 
 /* --- 투사체 --- */
 // --- 총잡이 사격 ---
-function aimAt(fx, fy) { const tg = P.lockT; if (tg && tg.on && !tg.dead && (tg.x - fx) * P.face > -20) return Math.atan2(tg.y - fy, tg.x - fx); const t2 = nearestEnemy(600, true); if (t2 && (t2.x - fx) * P.face > -20) return Math.atan2(t2.y - fy, t2.x - fx); return P.face > 0 ? 0 : Math.PI; }
+const GUN_RANGE = 280;   // 총알 사거리 (화면 가로의 절반 정도)
+function aimAt(fx, fy) { const tg = P.lockT; if (tg && tg.on && !tg.dead && (tg.x - fx) * P.face > -20 && Math.hypot(tg.x - fx, (tg.y - fy) * 1.6) < GUN_RANGE + 60) return Math.atan2(tg.y - fy, tg.x - fx); const t2 = nearestEnemy(GUN_RANGE + 60, true); if (t2 && (t2.x - fx) * P.face > -20) return Math.atan2(t2.y - fy, t2.x - fx); return P.face > 0 ? 0 : Math.PI; }
 function bullet(x, y, z, ang, dmg, type, spd, life, r, pierce, kb, glow) {
   const o = take(projs); if (!o) return null;
   o.type = type; o.x = x; o.y = y; o.z = z; o.vx = Math.cos(ang) * spd; o.vy = Math.sin(ang) * spd; o.vz = 0; o.life = o.max = life; o.dmg = dmg; o.r = r; o.mask = 0; o.face = o.vx >= 0 ? 1 : -1; o.glow = glow; o.delay = 0; o.pierce = pierce; o.kb = kb;
@@ -1446,19 +1447,19 @@ function muzzle(x, y, z, face, big) {
 }
 function gunShot(dmg, angOff, snd) {
   const mx = P.x + P.face * 34, my = P.y + 2, mz = 60 + P.z, a = aimAt(mx, my) + (angOff || 0);
-  bullet(mx, my, mz, a, dmg, 'pbullet', 980, 0.6, 12, 0, 150, 'gold');
+  bullet(mx, my, mz, a, dmg, 'pbullet', 980, GUN_RANGE / 980, 12, 0, 150, 'gold');
   muzzle(mx, my, mz, P.face, snd === 'shotgun'); sfx(snd || 'gun'); P.vx -= P.face * 70; kick(-P.face * 2.5, 0); buzz(snd === 'shotgun' ? 22 : 10);
 }
 function gunProj(p, st) {
   const mx = P.x + P.face * 34, my = P.y + 2, mz = 60 + P.z, dmg = st.dmg * p.dmg * st.skMul, a0 = aimAt(mx, my);
   switch (p.type) {
-    case 'bullet': for (let k = 0; k < p.n; k++) bullet(mx, my, mz, a0 + (k - (p.n - 1) / 2) * 0.07 + (p.jit ? (Math.random() - 0.5) * p.jit : 0), dmg, 'pbullet', 1000, 0.65, 13, 0, 200, 'gold'); muzzle(mx, my, mz, P.face, p.n > 1); sfx('gun'); buzz(18); kick(-P.face * 3, 0); break;
-    case 'shotgun': for (let k = 0; k < p.n; k++) bullet(mx, my, mz, a0 + (k / (p.n - 1) - 0.5) * p.spread, dmg, 'pbullet', 820 + Math.random() * 200, 0.32, 15, 1, 380, 'orange'); muzzle(mx, my, mz, P.face, true); sfx('shotgun'); buzz(50); kick(-P.face * 10, 0); addShake(9); cam.punch = Math.max(cam.punch, 0.06); break;
-    case 'snipe': { const o = bullet(mx, my, mz, a0, dmg, 'snipe', 1700, 0.6, 18, 99, 520, 'cyan'); muzzle(mx, my, mz, P.face, true); ring(mx, my, 6, 70, 0.3, '#9ae8ff', 5); sfx('shotgun'); sfx('thunder'); buzz(80); kick(-P.face * 14, 0); addShake(12); addStop(0.08); cam.punch = 0.1; whiteF = 0.15; break; }
-    case 'grenade': { const tg = P.lockT && P.lockT.on && !P.lockT.dead ? P.lockT : nearestEnemy(500, true), tx = tg ? tg.x : P.x + P.face * 240, ty = tg ? tg.y : P.y, o = take(projs); if (!o) break;
+    case 'bullet': for (let k = 0; k < p.n; k++) bullet(mx, my, mz, a0 + (k - (p.n - 1) / 2) * 0.07 + (p.jit ? (Math.random() - 0.5) * p.jit : 0), dmg, 'pbullet', 1000, GUN_RANGE / 1000, 13, 0, 200, 'gold'); muzzle(mx, my, mz, P.face, p.n > 1); sfx('gun'); buzz(18); kick(-P.face * 3, 0); break;
+    case 'shotgun': for (let k = 0; k < p.n; k++) bullet(mx, my, mz, a0 + (k / (p.n - 1) - 0.5) * p.spread, dmg, 'pbullet', 900, 190 / 900, 15, 1, 380, 'orange'); muzzle(mx, my, mz, P.face, true); sfx('shotgun'); buzz(50); kick(-P.face * 10, 0); addShake(9); cam.punch = Math.max(cam.punch, 0.06); break;
+    case 'snipe': { const o = bullet(mx, my, mz, a0, dmg, 'snipe', 1700, 560 / 1700, 18, 99, 520, 'cyan'); muzzle(mx, my, mz, P.face, true); ring(mx, my, 6, 70, 0.3, '#9ae8ff', 5); sfx('shotgun'); sfx('thunder'); buzz(80); kick(-P.face * 14, 0); addShake(12); addStop(0.08); cam.punch = 0.1; whiteF = 0.15; break; }
+    case 'grenade': { let tg = P.lockT && P.lockT.on && !P.lockT.dead ? P.lockT : nearestEnemy(320, true); if (tg && Math.hypot(tg.x - P.x, tg.y - P.y) > 320) tg = null; const tx = tg ? tg.x : P.x + P.face * 240, ty = tg ? tg.y : P.y, o = take(projs); if (!o) break;
       o.type = 'grenade'; o.x = P.x + P.face * 16; o.y = P.y; o.z = 70; o.vx = (tx - o.x) / 0.62; o.vy = (ty - o.y) / 0.62; o.vz = 360; o.life = o.max = 2; o.dmg = dmg; o.r = 120; o.mask = 0; o.delay = 0; sfx('swing'); break; }
-    case 'radial': for (let k = 0; k < p.n; k++) bullet(P.x, P.y, 56 + P.z, (k + p.off) / p.n * TAU, dmg, 'pbullet', 900, 0.5, 13, 0, 220, 'gold'); muzzle(P.x + P.face * 20, P.y, 56, P.face, true); sfx('gun'); buzz(30); break;
-    case 'fireb': bullet(mx, my, mz, a0, dmg, 'fireb', 700, 1.0, 16, 0, 300, 'fire'); muzzle(mx, my, mz, P.face, true); sfx('ki'); buzz(30); kick(-P.face * 6, 0); break;
+    case 'radial': for (let k = 0; k < p.n; k++) bullet(P.x, P.y, 56 + P.z, (k + p.off) / p.n * TAU, dmg, 'pbullet', 900, 230 / 900, 13, 0, 220, 'gold'); muzzle(P.x + P.face * 20, P.y, 56, P.face, true); sfx('gun'); buzz(30); break;
+    case 'fireb': bullet(mx, my, mz, a0, dmg, 'fireb', 700, 340 / 700, 16, 0, 300, 'fire'); muzzle(mx, my, mz, P.face, true); sfx('ki'); buzz(30); kick(-P.face * 6, 0); break;
   }
 }
 function spawnProj(p, st) {
@@ -1492,7 +1493,7 @@ function updateProjs(dt) {
   for (let i = 0; i < projs.n; i++) {
     const o = projs.items[i]; if (!o.on) continue;
     if (o.delay > 0) { o.delay -= dt; continue; }
-    o.life -= dt; if (o.life <= 0) { o.on = false; continue; }
+    o.life -= dt; if (o.life <= 0) { if (o.type === 'pbullet' || o.type === 'snipe') { const pf = takeF(parts); pf.x = o.x; pf.y = o.y; pf.z = o.z; pf.vx = pf.vy = 0; pf.vz = 10; pf.life = pf.max = 0.25; pf.size = 4; pf.col = '#d8d0c0'; pf.kind = 3; pf.add = false; } o.on = false; continue; }
     if (o.type === 'xfx' || o.type === 'tracer') continue;
     if (o.type === 'grenade') {
       o.x += o.vx * dt; o.y += o.vy * dt; o.vz -= 1150 * dt; o.z += o.vz * dt;
@@ -1983,6 +1984,7 @@ function update(dt) {
 let vL = 0, vR = 0, vT = 0, vB = 0;
 const inView = (x, y, m, top) => x > vL - m && x < vR + m && y > vT - m && y < vB + (top || m) + m;
 const drawList = [];
+const RDASH = [8, 10], NODASH = [];
 const byY = (a, b) => a.sortY - b.sortY;
 function shadow(x, y, rx, a) { ctx.globalAlpha = a; ctx.fillStyle = '#05030a'; ctx.beginPath(); ctx.ellipse(x + 3, y + 2, rx, rx * 0.36, 0, 0, TAU); ctx.fill(); }
 let PLOOK = LOOK.sword;
@@ -2066,6 +2068,7 @@ function render() {
       if (!o.dead) { const w = 34, y = o.y - 92; ctx.fillStyle = '#000b'; ctx.fillRect(o.x - w / 2 - 1, y - 1, w + 2, 6); ctx.fillStyle = '#4ad86a'; ctx.fillRect(o.x - w / 2, y, w * o.hp / o.maxHp, 4); ctx.fillStyle = '#9ad8ff'; ctx.font = '900 9px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('부하', o.x, y - 6); }
     } else if (o.kind === 'player') {
       if (P.inv > 0 && P.st === 'hurt' && ((P.inv * 18) | 0) % 2 === 0) ctx.globalAlpha = 0.5;
+      if (G.cls === 'gun' && (P.st === 'attack' || P.st === 'skill') && P.st !== 'dead') { ctx.globalAlpha = 0.16; ctx.strokeStyle = '#ffd88a'; ctx.lineWidth = 1.5; ctx.setLineDash(RDASH); ctx.beginPath(); ctx.ellipse(P.x, P.y, GUN_RANGE, GUN_RANGE * 0.62, 0, 0, TAU); ctx.stroke(); ctx.setLineDash(NODASH); ctx.globalAlpha = 1; }
       if (P.st === 'skill' && !P.skill.fin) { ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.45 + Math.sin(time * 30) * 0.15; ctx.drawImage(G.cls === 'sword' ? GL.gold : GL.orange, P.x - 55, P.y - 120 - P.z, 110, 130); ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1; }
       TIP.ok = false;
       drawFigure(ctx, P.x, P.y, P.z, 1, P.face, tv(P), P.disp, PLOOK, weapon(), P.flash > 0, P.t, P.capeA, null, P.sq);
@@ -2410,7 +2413,7 @@ function updateAllies(dt) {
       if (!a.hitDone && a.at >= A.hit[0]) {
         a.hitDone = true; a.vx = a.face * (G.cls === 'gun' ? -60 : 120);
         if (G.cls === 'gun') { const tg2 = tg || nearestEnemy(500, false), mx = a.x + a.face * 30, ang = tg2 ? Math.atan2(tg2.y - a.y, tg2.x - mx) : (a.face > 0 ? 0 : Math.PI);
-          bullet(mx, a.y, 56, ang, st.dmg * (2 / 3) * A.dmg, 'pbullet', 900, 0.6, 12, 0, 150, 'cyan'); muzzle(mx, a.y, 56, a.face, false); sfx('gun'); }
+          bullet(mx, a.y, 56, ang, st.dmg * (2 / 3) * A.dmg, 'pbullet', 900, 260 / 900, 12, 0, 150, 'cyan'); muzzle(mx, a.y, 56, a.face, false); sfx('gun'); }
         else
         for (let j = 0; j < enemies.n; j++) {
           const e = E[j]; if (!e.on || e.dead || e.st === 'spawn' || e.lastHitA === a.atk) continue;

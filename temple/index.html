@@ -896,6 +896,7 @@ function stepPose(a, dt, base) {
   }
   const sp = Math.sqrt(a.vx * a.vx + a.vy * a.vy), tA = 0.2 + Math.min(1.25, sp / 260) + Math.sin(a.t * 6 + a.x * 0.01) * 0.06;
   a.capeA += (tA - a.capeA) * Math.min(1, dt * 8);
+  if (a === P && P.st === 'skill') { const b = base; const K = ['lean', 'nU', 'fU', 'nT', 'fT', 'nS', 'fS', 'y']; for (let i = 0; i < K.length; i++) { const k = K[i]; a.disp[k] = b[k] + (a.disp[k] - b[k]) * 1.22; } }
   if (a.sq > 0) a.sq = Math.max(0, a.sq - dt * 1.2);
   if (a.lf === undefined) a.lf = a.face;
   if (a.face !== a.lf) { a.lf = a.face; a.flipT = 0.13; }
@@ -1198,7 +1199,7 @@ function canAct(b) {
     if ((b === 'atk' || b === 'kick') && t > h[1] - 0.03) return true;              // 콤보 이음
   }
   if (P.st === 'dash' && b !== 'dash') return true;                                  // 대시 → 돌진기/필살기
-  if (P.st === 'skill' && P.at > 0.88 && b !== 'ult') return true;                  // 필살기 후딜 캔슬
+  if (P.st === 'skill' && (P.at > 0.88 || P.skill.fin) && b !== 'ult') return true;                  // 필살기 후딜 캔슬
   if (P.st === 'skill' && b === 'dash' && P.at > 0.6) return true;
   return false;
 }
@@ -1212,6 +1213,14 @@ function startMove(A, comboIdx) {
   P.st = 'attack'; setAnim(P, A, 0.05); P.atkId++; P.combo = comboIdx;
   P.lockT = autoFace(st.range * (A.range || 1) + 120); P.lungeDone = false; P.landed = false; trail.n = 0;
 }
+// 합체기 마무리 결정 포즈 (검을 털고 / 주먹을 치켜듦)
+const FIN = {
+  sword: { fin: true, A: seq(0.55, [[0, PL.SW_FOL], [0.35, pose({ y: 4, lean: 0.06, head: 0.12, nU: -0.35, nF: 1.95, wp: 1.55, fU: 1.15, fF: 0.25, nT: 0.65, nS: -0.5, fT: -0.62, fS: -0.2 }), 'o'], [1, pose({ y: 4, lean: 0.04, head: 0.08, nU: -0.3, nF: 1.9, wp: 1.6, fU: 1.05, fF: 0.3, nT: 0.65, nS: -0.5, fT: -0.62, fS: -0.2 })]]), fx: [{ t: 0.4, f: 'gleam' }] },
+  fist: { fin: true, A: seq(0.55, [[0, FG], [0.35, pose({ y: 3, lean: -0.1, head: -0.25, nU: 2.95, nF: 0.55, wp: 0, fU: -0.45, fF: 1.85, nT: 0.6, nS: -0.45, fT: -0.6, fS: -0.2 }), 'o'], [1, pose({ y: 3, lean: -0.08, head: -0.2, nU: 2.9, nF: 0.6, wp: 0, fU: -0.45, fF: 1.85, nT: 0.6, nS: -0.45, fT: -0.6, fS: -0.2 })]]), fx: [{ t: 0.4, f: 'gleam' }] }
+};
+function startFinisher() {
+  const s = FIN[G.cls]; P.st = 'skill'; P.skill = s; setAnim(P, s.A, 0.08); P.prevAt = -0.001; P.turn = 1; P.z = 0; P.vx *= 0.3; P.vy *= 0.3;
+}
 function startSkill(i, nm) {
   const list = G.cls === 'sword' ? SK_SWORD : SK_FIST, s = list[i];
   const st = stats();
@@ -1219,7 +1228,12 @@ function startSkill(i, nm) {
   P.lockT = autoFace(st.range * 1.6 + 160);
   if (s.inv) P.inv = Math.max(P.inv, s.A.dur * 0.9);
   if (nm) skillName(nm); sfx('skill');
-  burst(P.x, P.y, 50, 10, '#ffe0a0', 160, 0.5, 3, 5, 60, true);
+  const ac = G.cls === 'sword' ? '#ffd88a' : '#ff9a4a';
+  burst(P.x, P.y, 50, 22, ac, 260, 0.6, 3, 5, 80, true);
+  if (nm) {   // 합체기 첫 발동: 시네마틱 연출
+    buzz([30, 30, 60]); lastBuzz = performance.now() + 60; cam.punch = Math.max(cam.punch, 0.1); addStop(0.06); darkF = Math.max(darkF, 0.32);
+    ring(P.x, P.y, 10, 170, 0.45, ac, 7); ring(P.x, P.y, 6, 110, 0.3, '#ffffff', 4); P.fusedLast = false;
+  } else { buzz(35); cam.punch = Math.max(cam.punch, 0.05); ring(P.x, P.y, 8, 110, 0.3, ac, 5); }
 }
 function doBuffered() {
   if (!P.buf || !canAct(P.buf)) return;
@@ -1294,6 +1308,7 @@ function updateSkill(dt, st) {
     P.vx = (l.back ? -P.face : P.face) * v; if (!l.back && v >= 500) P.vy = 0;
   }
   const df = Math.exp(-(s.fric || 7) * dt); P.vx *= df; P.vy *= df;
+  if (!s.fin && ((cur * 90) | 0) % 3 === 0) ghost(P, G.cls === 'sword' ? '#ffd88a' : '#ff9a4a');
   if (s.ghost && cur > s.ghost[0] && cur < s.ghost[1] && ((cur * 100) | 0) % 2 === 0) ghost(P, G.cls === 'sword' ? '#ffb07a' : '#ff8a5a');
   if (s.jump) {
     const [a, b, h] = s.jump;
@@ -1304,7 +1319,9 @@ function updateSkill(dt, st) {
   if (s.hits) for (const h of s.hits) if (crossed(prev, cur, h.t)) { P.atkId++; doHit(h, st, h.r || 1, !!h.all, h.dmg * st.skMul, true); if (h.fx) skillFx(h.fx); if (!h.all && G.cls === 'sword') sfx('swing'); }
   if (s.proj) for (const p of s.proj) if (crossed(prev, cur, p.t)) spawnProj(p, st);
   if (s.fx) for (const f of s.fx) if (crossed(prev, cur, f.t)) skillFx(f.f);
-  if (cur >= 1) { if (P.nextSkill != null) { const n = P.nextSkill; P.nextSkill = null; P.turn = 1; P.z = 0; startSkill(n); return; } P.st = 'free'; P.A = null; P.skill = null; P.turn = 1; P.z = 0; setAnim(P, null, 0.14); }
+  if (cur >= 1) { if (P.nextSkill != null) { const n = P.nextSkill; P.nextSkill = null; P.turn = 1; P.z = 0; startSkill(n); P.fusedLast = true; return; }
+    if (P.fusedLast && !s.fin) { P.fusedLast = false; startFinisher(); return; }
+    P.st = 'free'; P.A = null; P.skill = null; P.turn = 1; P.z = 0; setAnim(P, null, 0.14); }
 }
 function skillFx(f) {
   const fx = P.x + P.face * 50, fy = P.y;
@@ -1318,6 +1335,8 @@ function skillFx(f) {
     case 'crack': ring(P.x, P.y, 20, 260, 0.6, '#ff9a4a', 9); ring(P.x, P.y, 10, 160, 0.4, '#ffffff', 5); burst(P.x, P.y, 4, 46, '#8a7a6a', 460, 1.0, 8, 2, 300); burst(P.x, P.y, 10, 30, '#ff8a2a', 360, 0.6, 4, 6, 200, true); sfx('boom'); whiteF = 0.2; break;
     case 'burst': ring(P.x, P.y, 20, 300, 0.6, '#ffd24a', 12); ring(P.x, P.y, 10, 200, 0.45, '#ffffff', 6); burst(P.x, P.y, 40, 60, '#ffd88a', 520, 0.8, 4, 6, 200, true); sfx('boom'); whiteF = 0.35; cam.punch = 0.08; break;
     case 'aura': ring(P.x, P.y, 10, 120, 0.5, '#9ae8ff', 6); burst(P.x, P.y, 60, 24, '#bff4ff', 200, 0.8, 3, 6, 160, true); break;
+    case 'gleam': { const gx = TIP.ok ? TIP.x : P.x + P.face * 30, gy = TIP.ok ? TIP.y : P.y - 80; const p = takeF(parts); p.x = gx; p.y = gy; p.z = 0; p.vx = p.vy = p.vz = 0; p.life = p.max = 0.45; p.size = 22; p.col = '#ffffff'; p.kind = 5; p.add = true;
+      burst(gx, gy, 0, 10, G.cls === 'sword' ? '#fff4c8' : '#ffc88a', 160, 0.4, 2.5, 5, 0, true); buzz(18); break; }
     case 'charge': for (let i = 0; i < 24; i++) { const p = takeF(parts), a = Math.random() * TAU, r = 80 + Math.random() * 40; p.x = P.x + Math.cos(a) * r; p.y = P.y + Math.sin(a) * r * 0.5; p.z = 45 + (Math.random() - 0.5) * 60; p.vx = -Math.cos(a) * r * 3; p.vy = -Math.sin(a) * r * 1.5; p.vz = 0; p.life = p.max = 0.32; p.size = 2.5; p.col = G.cls === 'sword' ? '#9ae8ff' : '#ffb04a'; p.kind = 8; p.add = true; } sfx('ki'); break;
   }
 }
@@ -1514,9 +1533,11 @@ function spawnEnemy(type) {
 function attackers() { let n = 0; const E = enemies.items; for (let i = 0; i < enemies.n; i++) { const e = E[i]; if (e.on && !e.boss && (e.st === 'wind' || e.st === 'atk')) n++; } return n; }
 function hitEnemy(e, dmg, dir, H, crit, isSkill) {
   e.hp -= dmg; e.flash = 0.11; e.sq = Math.min(0.2, e.sq + 0.13); e.jit = 0.16;
-  { const hz2 = 46 * e.scale + e.z, sl = takeF(parts); sl.x = e.x; sl.y = e.y; sl.z = hz2; sl.vx = sl.vy = sl.vz = 0; sl.life = sl.max = 0.13; sl.size = (H.heavy || crit ? 90 : 62) * e.scale; sl.rot = (Math.random() - 0.5) * 1.2 + (dir > 0 ? -0.5 : 0.5); sl.col = crit ? '#fff2a0' : '#ffffff'; sl.kind = 10; sl.add = true;
+  { const hz2 = 46 * e.scale + e.z, sl = takeF(parts); sl.x = e.x; sl.y = e.y; sl.z = hz2; sl.vx = sl.vy = sl.vz = 0; sl.life = sl.max = 0.13; sl.size = (H.heavy || crit ? 90 : 62) * (isSkill ? 1.4 : 1) * e.scale; sl.rot = (Math.random() - 0.5) * 1.2 + (dir > 0 ? -0.5 : 0.5); sl.col = crit ? '#fff2a0' : '#ffffff'; sl.kind = 10; sl.add = true;
     const st2 = takeF(parts); st2.x = e.x - dir * 4; st2.y = e.y; st2.z = hz2; st2.vx = st2.vy = st2.vz = 0; st2.life = st2.max = 0.12; st2.size = crit ? 26 : 18; st2.col = '#ffffff'; st2.kind = 9; st2.add = true; }
-  kick(dir * (H.heavy || crit ? 9 : 4.5), (H.launch ? -5 : 0)); buzz(H.heavy || crit ? 24 : 12);
+  const big = H.heavy || crit;
+  kick(dir * (isSkill ? (big ? 14 : 8) : (big ? 9 : 4.5)), (H.launch ? -6 : 0)); buzz(isSkill ? (big ? 70 : 42) : (big ? 24 : 12));
+  if (isSkill) { cam.punch = Math.max(cam.punch, big ? 0.07 : 0.035); addShake(big ? 9 : 5); }
   burst(e.x, e.y, 2, 4, '#b8a890', 160 + (H.kb || 200) * 0.3, 0.4, 5, 3, 10);
   const kb = (H.kb || 200) * (e.boss ? 0.25 : e.def.armored ? 0.6 : 1);
   e.vx = dir * kb; e.vy *= 0.3;
@@ -1894,6 +1915,7 @@ function render() {
       if (!o.dead) { const w = 34, y = o.y - 92; ctx.fillStyle = '#000b'; ctx.fillRect(o.x - w / 2 - 1, y - 1, w + 2, 6); ctx.fillStyle = '#4ad86a'; ctx.fillRect(o.x - w / 2, y, w * o.hp / o.maxHp, 4); ctx.fillStyle = '#9ad8ff'; ctx.font = '900 9px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('부하', o.x, y - 6); }
     } else if (o.kind === 'player') {
       if (P.inv > 0 && P.st === 'hurt' && ((P.inv * 18) | 0) % 2 === 0) ctx.globalAlpha = 0.5;
+      if (P.st === 'skill' && !P.skill.fin) { ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.45 + Math.sin(time * 30) * 0.15; ctx.drawImage(G.cls === 'sword' ? GL.gold : GL.orange, P.x - 55, P.y - 120 - P.z, 110, 130); ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1; }
       TIP.ok = false;
       drawFigure(ctx, P.x, P.y, P.z, 1, P.face, tv(P), P.disp, PLOOK, weapon(), P.flash > 0, P.t, P.capeA, null, P.sq);
       ctx.globalAlpha = 1;

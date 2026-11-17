@@ -208,7 +208,7 @@ const TAU = Math.PI * 2;
 const $ = (id) => document.getElementById(id);
 const cv = $('c'), ctx = cv.getContext('2d');
 let W = 0, H = 0, DPR = 1, VS = 1, BAR = 0;
-const PIX = 1.75; // 픽셀 크기 (클수록 더 레트로)
+const PIX = 1.5; // 픽셀 크기 (클수록 더 레트로)
 function resize() {
   DPR = 1 / PIX; W = innerWidth; H = innerHeight;
   cv.width = (W * DPR) | 0; cv.height = (H * DPR) | 0;
@@ -427,6 +427,10 @@ const EANIM = {
     atk: seq(0.42, [[0, pose({ y: 8, lean: 0.45, nU: -0.7, nF: 1.9, wp: 0.6, fU: 0.6, fF: 1.0, nT: 1.0, nS: -1.3, fT: -0.4, fS: -0.8 })], [0.35, pose({ y: -6, lean: 0.55, x: 8, nU: 1.45, nF: 0.15, wp: 0, fU: -1.0, fF: 0.5, nT: 1.1, nS: -0.6, fT: -0.9, fS: -0.2 }), 'i'], [1, S, 'io']], { hit: [0.2, 0.5], leap: 360 }) },
   thrust: { wind: pose({ lean: -0.15, x: -8, nU: -0.2, nF: 1.75, wp: 0.0, fU: 0.9, fF: 0.7, nT: 0.5, nS: -0.3, fT: -0.4 }),
     atk: seq(0.44, [[0, pose({ lean: -0.15, x: -8, nU: -0.2, nF: 1.75, wp: 0.0, fU: 0.9, fF: 0.7, nT: 0.5, nS: -0.3, fT: -0.4 })], [0.3, pose({ lean: 0.5, x: 14, y: 5, nU: 1.5, nF: 0.05, wp: 0, fU: 1.35, fF: 0.2, nT: 1.0, nS: -0.45, fT: -0.85 }), 'i'], [0.7, pose({ lean: 0.45, x: 12, y: 4, nU: 1.5, nF: 0.05, wp: 0, fU: 1.3, fF: 0.2, nT: 0.95, nS: -0.45, fT: -0.8 })], [1, S, 'io']], { hit: [0.22, 0.6], leap: 200 }) },
+  sweep: { wind: pose({ lean: -0.25, x: -4, nU: -1.7, nF: 0.5, wp: 1.3, fU: -1.4, fF: 0.6, nT: 0.5, nS: -0.4, fT: -0.5, head: -0.1 }),
+    atk: seq(0.5, [[0, pose({ lean: -0.25, x: -4, nU: -1.7, nF: 0.5, wp: 1.3, fU: -1.4, fF: 0.6, nT: 0.5, nS: -0.4, fT: -0.5 })], [0.4, pose({ lean: 0.45, x: 10, y: 4, nU: 1.7, nF: 0.15, wp: -0.5, fU: 1.6, fF: 0.2, nT: 0.9, nS: -0.6, fT: -0.7 }), 'i'], [0.7, pose({ lean: 0.4, x: 9, y: 4, nU: 1.9, nF: 0.2, wp: -0.7, fU: 1.8, fF: 0.2, nT: 0.9, nS: -0.6, fT: -0.7 })], [1, S, 'io']], { hit: [0.26, 0.55], wide: true }) },
+  shoot: { wind: pose({ lean: -0.05, nU: 1.5, nF: 0.05, wp: 0, fU: 1.35, fF: 0.25, nT: 0.4, nS: -0.2, fT: -0.4, head: 0.05 }),
+    atk: seq(0.45, [[0, pose({ lean: -0.05, nU: 1.5, nF: 0.05, wp: 0, fU: 1.35, fF: 0.25, nT: 0.4, nS: -0.2, fT: -0.4 })], [0.15, pose({ lean: -0.25, x: -5, nU: 1.7, nF: 0.05, wp: 0, fU: 1.5, fF: 0.25, nT: 0.3, nS: -0.2, fT: -0.5, head: -0.15 }), 'o'], [1, S, 'io']], { hit: [0.05, 0.1], shoot: true }) },
   slam: { wind: pose({ y: -4, lean: -0.3, nU: 3.0, nF: 0.4, wp: 0.3, fU: 2.8, fF: 0.4, nT: 0.4, nS: -0.2, fT: -0.4, head: -0.25 }),
     atk: seq(0.55, [[0, pose({ y: -4, lean: -0.3, nU: 3.0, nF: 0.4, wp: 0.3, fU: 2.8, fF: 0.4, nT: 0.4, fT: -0.4 })], [0.3, pose({ y: 10, x: 6, lean: 0.6, nU: 1.2, nF: 0.2, wp: 0.15, fU: 1.1, fF: 0.3, nT: 0.95, nS: -0.75, fT: -0.7, head: 0.2 }), 'i'], [0.75, pose({ y: 10, x: 6, lean: 0.55, nU: 1.25, nF: 0.2, wp: 0.15, fU: 1.1, fF: 0.3, nT: 0.95, nS: -0.75, fT: -0.7 })], [1, S, 'io']], { hit: [0.28, 0.4], quake: 92 }) }
 };
@@ -462,6 +466,10 @@ const LOOK = {
   bandit: look({ skin: '#d8a882', hair: '#ff3aa8', hs: 'mohawk', shades: true, top: '#26262c', armsBare: true, bracer: '#3a3a40', trim: '#b8b8c0', pants: '#3a5a8a', boots: '#1a1a1e', armor: 2, spikes: true, aura: 'red', bulk: 1.05 }),
   lancer: look({ skin: '#e0b896', hair: '#4a3a2a', hs: 'centurion', top: '#a82a2a', trim: '#d8a848', pants: '#5a3a2a', boots: '#4a2e18', plume: '#d02a2a', armor: 1, bracer: '#c8963a', cape: '#c02028', shield: true, aura: 'gold', bulk: 1.05 }),
   brute: look({ skin: '#e0a07a', hair: '#e06a1a', hs: 'viking', bare: true, trim: '#8a6a3a', pants: '#5a4a3a', boots: '#3a2a1a', bulk: 1.4, bracer: '#6a4a2a', fur: '#8a7a6a', cape: '#6a4a30', aura: 'fire', warpaint: true }),
+  assassin: look({ skin: '#d8b090', hair: '#111118', hs: 'ninja', top: '#1c1c26', trim: '#c02030', pants: '#16161c', boots: '#0e0e12', bracer: '#2a2a36', cape: '#a01828', dual: true, aura: 'red', bulk: 0.92 }),
+  maceK: look({ skin: '#c8a080', hair: '#333', hs: 'greathelm', top: '#5a6272', armor: 3, trim: '#d8a848', pants: '#3a3a46', boots: '#4a4a56', bracer: '#8a929c', tabard: '#2a6a3a', cape: '#2a6a3a', aura: 'gold', bulk: 1.2 }),
+  reaper: look({ skin: '#ece4dc', hair: '#ddd', hs: 'reaper', top: '#1e1a28', robe: '#1a1624', trim: '#8a7ab8', pants: '#1a1624', boots: '#0e0c12', cape: '#2a2238', aura: 'purp', bulk: 0.96 }),
+  ranger: look({ skin: '#e0b08a', hair: '#8a5a2a', hs: 'ranger', top: '#3a6a2a', armsBare: true, bracer: '#5a3a1e', trim: '#c8a050', pants: '#4a3a28', boots: '#3a2614', cape: '#2a4a1e', bulk: 0.95 }),
   boss: look({ skin: '#8a8a96', hair: '#000', hs: 'horn', top: '#2a2a36', trim: '#c8962a', pants: '#1e1e28', boots: '#14141c', cape: '#4a0e18', armor: 4, eye: '#ff2a2a', bulk: 1.25, bracer: '#3a3a48' })
 };
 const SWORDS = [
@@ -485,6 +493,9 @@ const EWPN = {
   sword: { type: 'sword', len: 36, blade: '#b8b8c0', guard: '#6a5a4a' },
   spear: { type: 'spear', len: 76, blade: '#d0d4dc' },
   axe: { type: 'axe', len: 40, blade: '#9a9aa4' },
+  mace: { type: 'mace', len: 30, blade: '#8a8e98' },
+  scythe: { type: 'scythe', len: 72, blade: '#c8ccd8' },
+  xbow: { type: 'xbow', len: 26, blade: '#6a4a2a' },
   great: { type: 'sword', len: 64, blade: '#3a3a48', guard: '#c8962a', glow: 'red', great: true }
 };
 const LO = { kx: 0, ky: 0, fx: 0, fy: 0 };
@@ -550,6 +561,21 @@ function drawWeapon(g, w, hx, hy, a, t) {
     g.strokeStyle = col('#5a3a1e'); g.lineWidth = 3; g.beginPath(); g.moveTo(0, -22); g.lineTo(0, L); g.stroke();
     g.fillStyle = col(w.blade); g.beginPath(); g.moveTo(-3.5, L); g.lineTo(0, L + 14); g.lineTo(3.5, L); g.closePath(); g.fill();
     g.fillStyle = col('#c03030'); g.fillRect(-2.5, L - 6, 5, 4);
+  } else if (w.type === 'mace') {
+    g.strokeStyle = col('#4a2a14'); g.lineWidth = 3.6; g.beginPath(); g.moveTo(0, -6); g.lineTo(0, L); g.stroke();
+    g.fillStyle = col(w.blade);
+    for (let k = 0; k < 8; k++) { const a = k / 8 * TAU; g.beginPath(); g.moveTo(Math.cos(a) * 5, L + 6 + Math.sin(a) * 5); g.lineTo(Math.cos(a) * 10, L + 6 + Math.sin(a) * 10); g.lineTo(Math.cos(a + 0.35) * 5, L + 6 + Math.sin(a + 0.35) * 5); g.fill(); }
+    g.beginPath(); g.arc(0, L + 6, 6.5, 0, TAU); g.fill();
+    if (!GC) { g.strokeStyle = OUT(); g.lineWidth = 1; g.stroke(); g.fillStyle = '#d8dce4'; g.beginPath(); g.arc(-2, L + 4, 1.8, 0, TAU); g.fill(); }
+  } else if (w.type === 'scythe') {
+    g.strokeStyle = col('#3a2a1e'); g.lineWidth = 3; g.beginPath(); g.moveTo(0, -24); g.lineTo(0, L); g.stroke();
+    g.fillStyle = col(w.blade); g.beginPath(); g.moveTo(1, L - 2); g.quadraticCurveTo(-20, L - 6, -38, L - 26); g.quadraticCurveTo(-18, L + 4, 2, L + 5); g.closePath(); g.fill();
+    if (!GC) { g.strokeStyle = OUT(); g.lineWidth = 1; g.stroke(); g.strokeStyle = '#ffffff'; g.lineWidth = 0.8; g.beginPath(); g.moveTo(-6, L - 4); g.quadraticCurveTo(-22, L - 9, -35, L - 24); g.stroke(); }
+  } else if (w.type === 'xbow') {
+    g.fillStyle = col('#6a4a2a'); g.fillRect(-2.2, -4, 4.4, L);
+    g.strokeStyle = col('#4a3a2a'); g.lineWidth = 2.4; g.beginPath(); g.arc(0, L - 20, 14, 0.25, Math.PI - 0.25); g.stroke();
+    if (!GC) { g.strokeStyle = '#e8e0d0'; g.lineWidth = 0.7; g.beginPath(); g.moveTo(Math.cos(0.25) * 14, L - 20 + Math.sin(0.25) * 14); g.lineTo(0, L - 30); g.lineTo(-Math.cos(0.25) * 14, L - 20 + Math.sin(0.25) * 14); g.stroke();
+      g.fillStyle = '#c8ccd4'; g.fillRect(-0.8, L - 30, 1.6, 14); g.beginPath(); g.moveTo(-2.4, L - 16); g.lineTo(0, L - 10); g.lineTo(2.4, L - 16); g.fill(); }
   } else if (w.type === 'axe') {
     g.strokeStyle = col('#4a2a14'); g.lineWidth = 4; g.beginPath(); g.moveTo(0, -6); g.lineTo(0, L); g.stroke();
     g.fillStyle = col(w.blade); g.beginPath(); g.moveTo(0, L - 16); g.quadraticCurveTo(18, L - 14, 20, L - 4); g.quadraticCurveTo(18, L + 8, 0, L + 4); g.closePath(); g.fill();
@@ -604,6 +630,26 @@ function drawHead(g, L, t) {
     g.beginPath(); g.moveTo(-3.8, 0.5); g.quadraticCurveTo(-3.4, 6.2, 0.6, 8.6); g.quadraticCurveTo(4.6, 8.2, 6, 3.4); g.lineTo(5.4, 2.2); g.quadraticCurveTo(3, 3.4, 1.4, 2.6); g.lineTo(-1.6, 1.4); g.closePath(); g.fill();
     g.fillStyle = col(shade(L.hair, 0.15)); g.beginPath(); g.moveTo(2, 2.4); g.quadraticCurveTo(4.2, 1.8, 6.2, 3.2); g.lineTo(5.6, 4); g.quadraticCurveTo(4, 3, 2.4, 3.4); g.closePath(); g.fill();
     if (!GC) { g.strokeStyle = OUT(); g.lineWidth = 0.9; g.beginPath(); g.moveTo(-3.8, 0.5); g.quadraticCurveTo(-3.4, 6.2, 0.6, 8.6); g.quadraticCurveTo(4.6, 8.2, 6, 3.4); g.stroke(); }
+  } else if (hs === 'ninja') {
+    g.fillStyle = col(L.hair); g.beginPath(); g.ellipse(0, -0.6, 6.2, 7, 0, 0, TAU); g.fill();
+    g.fillStyle = col(L.skin); g.fillRect(1, -2.6, 5, 2.6);
+    if (!GC) { g.fillStyle = '#1a0a0a'; g.fillRect(3, -2.2, 2.4, 1.2); g.fillStyle = '#ff3a3a'; g.fillRect(4.2, -2, 0.9, 0.8); }
+    g.strokeStyle = col(L.trim); g.lineWidth = 1.6; g.beginPath(); g.moveTo(-5.8, -4); g.lineTo(5.8, -4.6); g.stroke();
+    g.beginPath(); g.moveTo(-5.6, -4); g.quadraticCurveTo(-10, -2 + Math.sin(t * 10) * 2, -14, 1 + Math.sin(t * 8) * 3); g.stroke();
+  } else if (hs === 'greathelm') {
+    g.fillStyle = col('#8a929e'); g.beginPath(); g.moveTo(-6, 6); g.lineTo(-6.4, -5); g.quadraticCurveTo(0, -9.4, 6.4, -5); g.lineTo(6.6, 6); g.closePath(); g.fill();
+    if (!GC) { g.strokeStyle = OUT(); g.lineWidth = 1; g.stroke(); g.fillStyle = '#14141a'; g.fillRect(0.6, -2, 6, 1.6); g.fillRect(3, -0.4, 1.4, 4);
+      g.fillStyle = '#d8a848'; g.fillRect(-0.6, -8.6, 1.6, 14); g.fillStyle = '#c8d0d8'; g.fillRect(-5.4, -4.6, 3, 1.2); }
+  } else if (hs === 'reaper') {
+    g.fillStyle = col(L.robe); g.beginPath(); g.moveTo(-8, 8); g.quadraticCurveTo(-10, -9, 0, -10); g.quadraticCurveTo(9, -9, 8, 3); g.lineTo(6, 8); g.closePath(); g.fill();
+    g.fillStyle = col(L.skin); g.beginPath(); g.ellipse(3, 0.4, 3.8, 4.8, 0, 0, TAU); g.fill();
+    if (!GC) { g.fillStyle = '#1a1020'; g.beginPath(); g.ellipse(4.2, -0.6, 1.3, 1.6, 0, 0, TAU); g.fill(); g.fillStyle = '#c88aff'; g.fillRect(3.9, -0.9, 0.8, 0.8);
+      g.globalCompositeOperation = 'lighter'; g.globalAlpha = 0.6 + Math.sin(t * 5) * 0.3; g.drawImage(GL.purp, -1, -5, 10, 9); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
+      g.strokeStyle = '#1a1020'; g.lineWidth = 0.6; for (let k = 0; k < 3; k++) { g.beginPath(); g.moveTo(1.6 + k * 1.2, 3); g.lineTo(1.6 + k * 1.2, 4.6); g.stroke(); } }
+  } else if (hs === 'ranger') {
+    g.fillStyle = col(L.hair); g.beginPath(); g.moveTo(-5, 3); g.quadraticCurveTo(-6.6, -3, -3, -4); g.lineTo(-3, 2); g.closePath(); g.fill();
+    g.fillStyle = col('#2e5a22'); g.beginPath(); g.moveTo(-8, -3.4); g.quadraticCurveTo(-2, -12, 7.6, -4); g.lineTo(9, -2.8); g.lineTo(-7, -2.2); g.closePath(); g.fill();
+    g.strokeStyle = col('#d83a2a'); g.lineWidth = 1.6; g.beginPath(); g.moveTo(-4, -6); g.quadraticCurveTo(-9, -12, -13, -12 + Math.sin(t * 4)); g.stroke();
   } else if (hs === 'wizard') {
     g.fillStyle = col(L.hair); g.beginPath(); g.moveTo(-2, 2); g.quadraticCurveTo(1, 12, 4.8, 6); g.lineTo(5, 2.6); g.closePath(); g.fill();
     g.fillStyle = col(L.hat); g.beginPath(); g.ellipse(0, -4.4, 9, 2.4, -0.08, 0, TAU); g.fill();
@@ -748,6 +794,7 @@ function drawFigure(g, x, y, z, sc, face, turn, P, L, w, flash, t, capeA, ghost,
   // 먼 팔
   mlimb(g, shX - 2, shY + 2.8, P.fU, 15, P.fU + P.fF, 14, AW1, AW2, armUpD, foD, null, null, true, null);
   if (fist) drawGlove(g, w, LO.fx, LO.fy, P.fU + P.fF, t, true);
+  else if (L.dual) drawWeapon(g, EWPN.dagger, LO.fx, LO.fy, P.fU + P.fF + 0.5, t);
   else if (L.shield) {
     g.save(); g.translate(LO.fx, LO.fy);
     g.fillStyle = col('#a82a2a'); g.beginPath(); g.ellipse(2, 0, 7.5, 12, 0, 0, TAU); g.fill();
@@ -816,6 +863,10 @@ function take(p) { for (let k = 0; k < p.n; k++) { const i = (p.cur + k) % p.n; 
 function takeF(p) { const o = p.items[p.cur]; p.cur = (p.cur + 1) % p.n; o.on = true; return o; }
 function clearPool(p) { for (let i = 0; i < p.n; i++) p.items[i].on = false; }
 function makeActor() { return { x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, face: 1, turn: 1, ph: 0, mv: 0, t: 0, A: null, at: 0, disp: pose(), from: pose(), tgt: pose(), bl: 1, blD: 0.08, capeA: 0.3, flash: 0, sq: 0, sortY: 0, holdPose: null, wS: 1.8, wV: 0 }; }
+function tv(a) {   // 표시용 회전값: 방향이 바뀌면 0.13초 동안 몸을 돌림
+  if (!(a.flipT > 0) || a.turn !== 1) return a.turn;
+  const v = -1 + 2 * eOut(1 - a.flipT / 0.13); return Math.abs(v) < 0.08 ? (v < 0 ? -0.08 : 0.08) : v;
+}
 function setAnim(a, A, blend) { copyPose(a.from, a.disp); a.bl = 0; a.blD = blend === undefined ? 0.07 : Math.max(0.01, blend); a.A = A; a.at = 0; }
 function stepPose(a, dt, base) {
   if (a.A) sampleAnim(a.A, Math.min(1, a.at), a.tgt);
@@ -834,6 +885,9 @@ function stepPose(a, dt, base) {
   const sp = Math.sqrt(a.vx * a.vx + a.vy * a.vy), tA = 0.2 + Math.min(1.25, sp / 260) + Math.sin(a.t * 6 + a.x * 0.01) * 0.06;
   a.capeA += (tA - a.capeA) * Math.min(1, dt * 8);
   if (a.sq > 0) a.sq = Math.max(0, a.sq - dt * 1.2);
+  if (a.lf === undefined) a.lf = a.face;
+  if (a.face !== a.lf) { a.lf = a.face; a.flipT = 0.13; }
+  if (a.flipT > 0) a.flipT -= dt;
 }
 const P = Object.assign(makeActor(), { on: true, kind: 'player', hp: 100, maxHp: 100, st: 'free', inv: 0, combo: 0, comboT: 0, atkId: 0, hitsLeft: 0, multiT: 0, ult: 0,
   buf: null, bufT: 0, dashT: 0, dashCd: 0, dashDx: 1, dashDy: 0, perfectT: 0, lockT: null, lungeDone: false, landed: false, skill: null, prevAt: 0, ultT: 0, ultStep: 0 });
@@ -1294,6 +1348,16 @@ function updateProjs(dt) {
     if (o.delay > 0) { o.delay -= dt; continue; }
     o.life -= dt; if (o.life <= 0) { o.on = false; continue; }
     if (o.type === 'xfx') continue;
+    if (o.type === 'ebolt') {
+      o.x += o.vx * dt; o.y += o.vy * dt;
+      if (o.x < -40 || o.x > AW + 40 || o.y < -20 || o.y > AH + 20) { o.on = false; continue; }
+      if (P.st !== 'dead' && (P.x - o.x) ** 2 + ((P.y - o.y) * 1.6) ** 2 < 22 * 22) {
+        if (P.inv > 0) { if (P.st === 'dash' || (P.st === 'skill' && P.skill && P.skill.inv)) { if (P.perfectT <= 0) perfectDodge(); } }
+        else { hurtPlayer(o.dmg, o.vx > 0 ? 1 : -1); o.on = false; continue; }
+      }
+      for (let j = 0; j < allies.n; j++) { const a = allies.items[j]; if (a.on && !a.dead && (a.x - o.x) ** 2 + ((a.y - o.y) * 1.6) ** 2 < 20 * 20 && hurtAlly(a, o.dmg, o.vx > 0 ? 1 : -1)) { o.on = false; break; } }
+      continue;
+    }
     if (o.type === 'orbit') {
       o.ang += dt * 5.5; o.x = P.x + Math.cos(o.ang) * 70; o.y = P.y + Math.sin(o.ang) * 34; o.z = 38 + Math.sin(o.ang * 2) * 6;
       o.tick -= dt; if (o.tick <= 0) { o.tick = 0.35; o.mask = 0; }
@@ -1390,15 +1454,20 @@ const EDEF = {
   bandit: { name: '모히칸 약탈자', hp: 44, spd: 108, dmg: 11, r: 16, range: 74, wind: 0.36, move: 'slash', coins: 6, poise: 16, look: 'bandit', wpn: 'sword', sc: 1 },
   lancer: { name: '제국 백인대장', hp: 52, spd: 96, dmg: 13, r: 16, range: 120, wind: 0.5, move: 'thrust', coins: 8, poise: 22, look: 'lancer', wpn: 'spear', sc: 1.02 },
   brute: { name: '바이킹 광전사', hp: 120, spd: 78, dmg: 22, r: 22, range: 88, wind: 0.75, move: 'slam', coins: 16, poise: 55, look: 'brute', wpn: 'axe', sc: 1.12, armored: true },
+  assassin: { name: '쌍검 암살자', hp: 30, spd: 145, dmg: 8, r: 14, range: 68, wind: 0.3, move: 'lunge', coins: 6, poise: 8, look: 'assassin', wpn: 'dagger', sc: 0.98 },
+  maceK: { name: '철퇴 기사', hp: 110, spd: 80, dmg: 18, r: 19, range: 82, wind: 0.62, move: 'slam', coins: 13, poise: 50, look: 'maceK', wpn: 'mace', sc: 1.08, armored: true },
+  reaper: { name: '낫의 사도', hp: 70, spd: 102, dmg: 14, r: 17, range: 108, wind: 0.52, move: 'sweep', coins: 10, poise: 24, look: 'reaper', wpn: 'scythe', sc: 1.05 },
+  ranger: { name: '석궁 사수', hp: 40, spd: 100, dmg: 10, r: 15, range: 400, wind: 0.7, move: 'shoot', coins: 8, poise: 10, look: 'ranger', wpn: 'xbow', sc: 1, ranged: true },
   boss: { name: '타락한 신전 기사', hp: 820, spd: 115, dmg: 24, r: 30, range: 110, wind: 0.6, move: 'slash', coins: 120, poise: 160, look: 'boss', wpn: 'great', sc: 1.5, armored: true }
 };
 function waveList(w) {
   const isBoss = w % 4 === 0;
-  const pool = w === 1 ? ['cultist', 'cultist', 'bandit'] : w === 2 ? ['cultist', 'bandit', 'lancer'] : w < 6 ? ['cultist', 'bandit', 'lancer', 'brute'] : ['bandit', 'lancer', 'brute', 'cultist', 'brute'];
+  const pool = w === 1 ? ['cultist', 'bandit', 'assassin'] : w === 2 ? ['cultist', 'bandit', 'assassin', 'ranger'] : w < 5 ? ['bandit', 'lancer', 'assassin', 'ranger', 'brute', 'reaper'] : ['bandit', 'lancer', 'assassin', 'ranger', 'brute', 'reaper', 'maceK', 'maceK'];
   const L = [];
   if (isBoss) return ['boss'];   // 보스 웨이브는 보스 혼자
   else for (let i = 0; i < 5; i++) L.push(pool[(Math.random() * pool.length) | 0]);
-  if (!isBoss && w >= 3 && !L.includes('brute') && Math.random() < 0.5) L[4] = 'brute';
+  if (w >= 3 && !L.includes('brute') && !L.includes('maceK') && Math.random() < 0.5) L[4] = w >= 5 ? 'maceK' : 'brute';
+  if (L.filter(t => t === 'ranger').length > 2) L[0] = 'bandit';
   return L;
 }
 function spawnEnemy(type) {
@@ -1409,7 +1478,7 @@ function spawnEnemy(type) {
   if (type === 'boss') pt = { x: AW / 2, y: 80 };
   e.type = type; e.def = d; e.x = pt.x + (Math.random() - 0.5) * 30; e.y = pt.y + (Math.random() - 0.5) * 20; e.z = 0; e.vx = e.vy = e.vz = 0;
   e.boss = type === 'boss';
-  const ps = stats(), K = { cultist: 0.6, bandit: 0.75, lancer: 0.85, brute: 1.4, boss: 1 }[type];
+  const ps = stats(), K = { cultist: 0.6, bandit: 0.75, lancer: 0.85, brute: 1.4, assassin: 0.55, maceK: 1.25, reaper: 0.9, ranger: 0.5, boss: 1 }[type];
   if (e.boss) {
     const n = Math.floor(w / 4) - 1, bk = n === 0 ? 0.5 : n === 1 ? 0.65 : n === 2 ? 0.82 : 1 + (n - 3) * 0.35;   // 1번째 보스 50% → 2번째 65% → 3번째 82% → 이후 점점 강해짐
     e.maxHp = e.hp = Math.round(d.hp * 1.35 * bk); e.dmgV = Math.round(d.dmg * 1.5 * (1 + (w - 1) * 0.1) * (0.55 + bk * 0.45)); e.spd *= 0.85 + Math.min(1, bk) * 0.15;
@@ -1417,7 +1486,7 @@ function spawnEnemy(type) {
   else { e.maxHp = e.hp = Math.round(ps.maxHp * (2 / 3) * K); e.dmgV = Math.max(4, Math.round(ps.dmg * (2 / 3) * K)); } e.spd = d.spd * (1 + Math.min(0.35, (w - 1) * 0.025));
   e.poise = e.maxPoise = d.poise; e.scale = d.sc; e.look = LOOK[d.look]; e.wpn = EWPN[d.wpn];
   e.st = 'spawn'; e.stT = e.boss ? 1.6 : 0.85; e.cd = 0.8 + Math.random(); e.lastHit = -1; e.dead = false; e.alpha = 1; e.flash = 0; e.enraged = false; e.sq = 0;
-  e.face = e.x < P.x ? 1 : -1; e.turn = 1; e.t = Math.random() * 10; e.mv = 0; e.ph = 0; e.holdPose = null; e.strafe = Math.random() < 0.5 ? 1 : -1; e.strafeT = 1 + Math.random() * 2;
+  e.face = e.x < P.x ? 1 : -1; e.turn = 1; e.t = Math.random() * 10; e.mv = 0; e.ph = 0; e.holdPose = null; e.prefAlly = Math.random() < 0.45; e.strafe = Math.random() < 0.5 ? 1 : -1; e.strafeT = 1 + Math.random() * 2;
   setAnim(e, ANIM.spawn, 0.01); copyPose(e.disp, ANIM.spawn.keys[0].p);
   ring(e.x, e.y, 60 * e.scale, 6, 0.8, e.boss ? '#ff3a3a' : '#b06aff', 4);
   burst(e.x, e.y, 0, 24, e.boss ? '#ff5a3a' : '#9a5aff', 120, 0.9, 5, 6, 80, true);
@@ -1480,6 +1549,11 @@ function enemyAttackStart(e) {
   setAnim(e, null, e.stT * 0.8); e.holdPose = EANIM[e.move].wind; e.face = (e.tg || P).x >= e.x ? 1 : -1; sfx('wind');
 }
 function pickTarget(e) {
+  if (e.prefAlly) {
+    let a2 = null, b2 = 520 * 520;
+    for (let i = 0; i < allies.n; i++) { const a = allies.items[i]; if (!a.on || a.dead || a.st === 'spawn') continue; const d2 = (a.x - e.x) ** 2 + ((a.y - e.y) * 1.6) ** 2; if (d2 < b2) { b2 = d2; a2 = a; } }
+    if (a2) return a2;
+  }
   let best = P.st !== 'dead' ? P : null, bd = best ? (P.x - e.x) ** 2 + ((P.y - e.y) * 1.6) ** 2 : 1e12;
   for (let i = 0; i < allies.n; i++) { const a = allies.items[i]; if (!a.on || a.dead || a.st === 'spawn') continue; const d2 = (a.x - e.x) ** 2 + ((a.y - e.y) * 1.6) ** 2; if (d2 < bd * 0.8) { bd = d2; best = a; } }
   return best || P;
@@ -1549,8 +1623,8 @@ function updateEnemies(dt) {
         if (e.boss) { if (dist > 130) { tvx = dx / dist * e.spd; tvy = dy / dist * e.spd * 0.8; move = true; } if (e.cd <= 0 && T.st !== 'dead') bossChoose(e); break; }
         e.strafeT -= dt; if (e.strafeT <= 0) { e.strafe *= -1; e.strafeT = 1.2 + Math.random() * 2; }
         const canAtk = e.cd <= 0 && atkN < maxAtk && T.st !== 'dead';
-        if (canAtk && dist < d.range + 10 && Math.abs(dy) < 34) { e.move = d.move; enemyAttackStart(e); atkN++; break; }
-        const keep = canAtk ? d.range * 0.85 : 150 + (i % 3) * 25, nx = dx / (dist || 1), ny = dy / (dist || 1);
+        if (canAtk && dist < d.range + 10 && Math.abs(dy) < (d.ranged ? 200 : 34)) { e.move = d.move; enemyAttackStart(e); atkN++; break; }
+        const keep = d.ranged ? 250 + (i % 3) * 30 : canAtk ? d.range * 0.85 : 150 + (i % 3) * 25, nx = dx / (dist || 1), ny = dy / (dist || 1);
         if (dist > keep + 12) { tvx = nx * e.spd; tvy = ny * e.spd * 0.85; } else if (dist < keep - 20) { tvx = -nx * e.spd * 0.6; tvy = -ny * e.spd * 0.5; }
         if (canAtk) tvy += clamp(dy * 3, -e.spd, e.spd) * 0.6; else { tvx += -ny * e.strafe * e.spd * 0.45; tvy += nx * e.strafe * e.spd * 0.45; }
         move = Math.abs(tvx) + Math.abs(tvy) > 10;
@@ -1565,11 +1639,15 @@ function updateEnemies(dt) {
         const A = EANIM[e.move].atk; e.at += dt / A.dur;
         const df = Math.exp(-5 * dt); e.vx *= df; e.vy *= df;
         if (!e.hitDone && e.at >= A.hit[0] && e.at <= A.hit[1]) {
-          if (A.quake) {
+          if (A.shoot) {
+            e.hitDone = true; const T2 = e.tg || P, bx = e.x + e.face * 30, by = e.y, ang = Math.atan2(T2.y - by, T2.x - bx), o = take(projs);
+            if (o) { o.type = 'ebolt'; o.x = bx; o.y = by; o.z = 50; o.vx = Math.cos(ang) * 470; o.vy = Math.sin(ang) * 470; o.life = o.max = 1.6; o.dmg = e.dmgV; o.r = 16; o.delay = 0; o.glow = 'red'; }
+            sfx('jab'); burst(bx, by, 50, 6, '#ffd8a0', 120, 0.25, 2, 1, 40, true);
+          } else if (A.quake) {
             e.hitDone = true; const qx = e.x + e.face * 40 * e.scale, qy = e.y;
             ring(qx, qy, 10, A.quake * e.scale, 0.45, '#ffb07a', 6); burst(qx, qy, 4, 24, '#a89880', 320, 0.8, 6, 3, 80);
             addShake(10); sfx('quake'); enemyHitsPlayer(e, e.dmgV, 0, 0, A.quake * e.scale, qx, qy);
-          } else if (enemyHitsPlayer(e, e.dmgV, d.range + 14 * e.scale, 36 * e.scale)) e.hitDone = true;
+          } else if (enemyHitsPlayer(e, e.dmgV, d.range + 14 * e.scale, (A.wide ? 54 : 36) * e.scale)) e.hitDone = true;
         }
         if (e.at >= 1) {
           if (e.boss && e.combo > 1) { e.combo--; e.face = dx >= 0 ? 1 : -1; setAnim(e, A, 0.06); e.hitDone = false; e.vx = e.face * 260; sfx('swing'); }
@@ -1777,19 +1855,19 @@ function render() {
       if (warn) { ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.35 + Math.sin(time * 30) * 0.2; ctx.drawImage(GL.red, o.x - 40 * o.scale, o.y - 110 * o.scale, 80 * o.scale, 110 * o.scale); ctx.globalCompositeOperation = 'source-over'; }
       if (o.look.aura && !o.dead && o.st !== 'spawn') { ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.22 + Math.sin(time * 4 + o.x) * 0.08; ctx.drawImage(GL[o.look.aura], o.x - 34 * o.scale, o.y - 96 * o.scale - o.z, 68 * o.scale, 104 * o.scale); ctx.globalCompositeOperation = 'source-over'; }
       ctx.globalAlpha = ia;
-      drawFigure(ctx, o.x, o.y, o.z, o.scale, o.face, o.turn, o.disp, o.look, o.wpn, o.flash > 0, o.t, o.capeA, null, o.sq);
+      drawFigure(ctx, o.x, o.y, o.z, o.scale, o.face, tv(o), o.disp, o.look, o.wpn, o.flash > 0, o.t, o.capeA, null, o.sq);
       ctx.globalAlpha = 1;
       if (warn) { const k = Math.sin(time * 30) * 0.5 + 0.5; ctx.fillStyle = `rgba(255,${(80 + k * 120) | 0},60,1)`; ctx.font = `900 ${20 * o.scale | 0}px sans-serif`; ctx.textAlign = 'center'; ctx.fillText('!', o.x, o.y - 104 * o.scale - o.z); }
       if (!o.boss && !o.dead && o.hp < o.maxHp && o.st !== 'spawn') { const w = 40, y = o.y - 98 * o.scale - o.z; ctx.fillStyle = '#000b'; ctx.fillRect(o.x - w / 2 - 1, y - 1, w + 2, 6); ctx.fillStyle = '#e03a2a'; ctx.fillRect(o.x - w / 2, y, w * Math.max(0, o.hp / o.maxHp), 4); }
     } else if (o.kind === 'ally') {
       ctx.globalAlpha = o.alpha * (o.inv > 0 && !o.dead && ((o.inv * 18) | 0) % 2 === 0 ? 0.6 : 1);
-      drawFigure(ctx, o.x, o.y, o.z, 0.94, o.face, o.turn, o.disp, ALOOK[G.cls], G.cls === 'sword' ? SWORDS[1] : FISTS[1], o.flash > 0, o.t, o.capeA, null, 0);
+      drawFigure(ctx, o.x, o.y, o.z, 0.94, o.face, tv(o), o.disp, ALOOK[G.cls], G.cls === 'sword' ? SWORDS[1] : FISTS[1], o.flash > 0, o.t, o.capeA, null, 0);
       ctx.globalAlpha = 1;
       if (!o.dead) { const w = 34, y = o.y - 92; ctx.fillStyle = '#000b'; ctx.fillRect(o.x - w / 2 - 1, y - 1, w + 2, 6); ctx.fillStyle = '#4ad86a'; ctx.fillRect(o.x - w / 2, y, w * o.hp / o.maxHp, 4); ctx.fillStyle = '#9ad8ff'; ctx.font = '900 9px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('부하', o.x, y - 6); }
     } else if (o.kind === 'player') {
       if (P.inv > 0 && P.st === 'hurt' && ((P.inv * 18) | 0) % 2 === 0) ctx.globalAlpha = 0.5;
       TIP.ok = false;
-      drawFigure(ctx, P.x, P.y, P.z, 1, P.face, P.turn, P.disp, PLOOK, weapon(), P.flash > 0, P.t, P.capeA, null, 0);
+      drawFigure(ctx, P.x, P.y, P.z, 1, P.face, tv(P), P.disp, PLOOK, weapon(), P.flash > 0, P.t, P.capeA, null, 0);
       ctx.globalAlpha = 1;
       if (P.st !== 'dead') {
         const r = clamp(P.hp / P.maxHp, 0, 1), w = 66, y = P.y - 108 - P.z;
@@ -1920,6 +1998,11 @@ function drawProjs() {
       ctx.fillStyle = '#fff6e0'; for (let k = 0; k < 4; k++) { ctx.beginPath(); ctx.ellipse(48, -27 + k * 18, 14, 9, 0, 0, TAU); ctx.fill(); }
       ctx.fillStyle = `rgba(${c},.5)`; ctx.fillRect(-120, -26, 90, 52);
       ctx.restore();
+    } else if (o.type === 'ebolt') {
+      const y = o.y - o.z, a2 = Math.atan2(o.vy, o.vx);
+      ctx.globalAlpha = 0.5; ctx.drawImage(GL.red, o.x - 16, y - 16, 32, 32); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+      ctx.save(); ctx.translate(o.x, y); ctx.rotate(a2); ctx.strokeStyle = '#6a4a2a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-14, 0); ctx.lineTo(6, 0); ctx.stroke();
+      ctx.fillStyle = '#e8ecf0'; ctx.beginPath(); ctx.moveTo(10, 0); ctx.lineTo(4, -3); ctx.lineTo(4, 3); ctx.fill(); ctx.fillStyle = '#d83a2a'; ctx.fillRect(-15, -2.5, 4, 1.6); ctx.fillRect(-15, 1, 4, 1.6); ctx.restore();
     } else if (o.type === 'xfx') {
       const y = o.y - o.z, k = 1 - o.life / o.max, s = 60 + k * 30;
       ctx.globalAlpha = 1 - k; ctx.strokeStyle = `rgb(${c})`; ctx.lineWidth = 10 * (1 - k) + 2;

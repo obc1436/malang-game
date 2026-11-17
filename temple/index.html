@@ -1652,7 +1652,7 @@ function waveList(w) {
   const pool = w === 1 ? ['cultist', 'bandit', 'assassin'] : w === 2 ? ['cultist', 'bandit', 'assassin', 'ranger'] : w < 5 ? ['bandit', 'lancer', 'assassin', 'ranger', 'brute', 'reaper'] : ['bandit', 'lancer', 'assassin', 'ranger', 'brute', 'reaper', 'maceK', 'maceK'];
   const L = [];
   if (isBoss) return ['boss'];   // 보스 웨이브는 보스 혼자
-  else for (let i = 0; i < 5; i++) L.push(pool[(Math.random() * pool.length) | 0]);
+  else for (let i = 0, n = G.cls === 'gun' ? 10 : 5; i < n; i++) L.push(pool[(Math.random() * pool.length) | 0]);   // 총잡이는 적 10명
   if (w >= 3 && !L.includes('brute') && !L.includes('maceK') && Math.random() < 0.5) L[4] = w >= 5 ? 'maceK' : 'brute';
   if (L.filter(t => t === 'ranger').length > 2) L[0] = 'bandit';
   return L;
@@ -1922,7 +1922,7 @@ function collide(a, r) {
 function startWave() {
   G.wave++; G.toSpawn = waveList(G.wave); G.spawnT = 0.8; G.alive = 0; G.clearT = 0;
   const boss = G.wave % 4 === 0;
-  banner('WAVE ' + G.wave, boss ? '⚠ 신전의 수호자가 깨어난다' : '적 5명이 몰려온다', boss);
+  banner('WAVE ' + G.wave, boss ? '⚠ 신전의 수호자가 깨어난다' : `적 ${G.toSpawn.length}명이 몰려온다`, boss);
   G.state = 'play';
 }
 function updateWave(dt) {

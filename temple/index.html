@@ -13,8 +13,14 @@ canvas#c{position:fixed;inset:0;width:100%;height:100%;display:block;image-rende
 #crt{position:fixed;inset:0;z-index:4;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.16) 0 1px,rgba(0,0,0,0) 1px 3px);mix-blend-mode:multiply}
 .hide{display:none!important}
 #hud{position:fixed;left:0;right:0;top:0;z-index:5;pointer-events:none;padding:calc(env(safe-area-inset-top) + 10px) 12px 0;display:flex;align-items:flex-start;gap:10px}
-#hpWrap{flex:1;max-width:300px}
-#hpWrap .nm{font-size:11px;font-weight:900;letter-spacing:2px;color:#e8d3a0;text-shadow:0 1px 3px #000;margin-bottom:3px}
+#hud{flex-wrap:wrap}
+#hpWrap{order:3;flex:1 1 100%;max-width:none}
+#mid{flex:1!important;text-align:left!important}
+#hpWrap .bar{height:24px;border-width:2px;border-color:#e8c878}
+#hpWrap .bar b{font-size:14px;line-height:21px;letter-spacing:.5px}
+#hpWrap.low .bar{animation:hplow .5s infinite alternate}
+@keyframes hplow{from{box-shadow:0 0 0 #f00}to{box-shadow:0 0 16px #f22,0 0 4px #f00}}
+#hpWrap .nm{font-size:12px;font-weight:900;letter-spacing:2px;color:#e8d3a0;text-shadow:0 1px 3px #000;margin-bottom:3px}
 .bar{height:14px;border-radius:3px;background:#140c0a;border:1.5px solid #8a6a3a;position:relative;overflow:hidden;box-shadow:0 2px 6px #000a,inset 0 2px 4px #000}
 .bar i{position:absolute;left:0;top:0;bottom:0}
 #hpLag{background:#f5e6b0;transition:width .5s .25s}
@@ -29,7 +35,7 @@ canvas#c{position:fixed;inset:0;width:100%;height:100%;display:block;image-rende
 #gold.bump{animation:bump .25s}
 @keyframes bump{40%{transform:scale(1.25)}}
 .hb{pointer-events:auto;width:34px;height:34px;border-radius:9px;border:1.5px solid #8a6a3a;background:#1a1006dd;color:#f6ecd6;font-size:16px;cursor:pointer}
-#bossBar{position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top) + 64px);z-index:5;width:min(86vw,520px);pointer-events:none}
+#bossBar{position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top) + 108px);z-index:5;width:min(86vw,520px);pointer-events:none}
 #bossBar .nm{text-align:center;font-size:13px;font-weight:900;letter-spacing:3px;color:#ff9a8a;text-shadow:0 0 10px #f008,0 2px 2px #000;margin-bottom:3px}
 #bossBar .bar{height:12px;border-color:#a0302a}
 #bossFill{background:linear-gradient(#c060ff,#7a1aa8 55%,#3a0a5a)}
@@ -1404,7 +1410,10 @@ function spawnEnemy(type) {
   e.type = type; e.def = d; e.x = pt.x + (Math.random() - 0.5) * 30; e.y = pt.y + (Math.random() - 0.5) * 20; e.z = 0; e.vx = e.vy = e.vz = 0;
   e.boss = type === 'boss';
   const ps = stats(), K = { cultist: 0.6, bandit: 0.75, lancer: 0.85, brute: 1.4, boss: 1 }[type];
-  if (e.boss) { e.maxHp = e.hp = Math.round(d.hp * 1.35 * (1 + Math.floor(w / 4 - 1) * 0.6)); e.dmgV = Math.round(d.dmg * 1.5 * (1 + (w - 1) * 0.1)); }
+  if (e.boss) {
+    const n = Math.floor(w / 4) - 1, bk = n === 0 ? 0.5 : n === 1 ? 0.65 : n === 2 ? 0.82 : 1 + (n - 3) * 0.35;   // 1번째 보스 50% → 2번째 65% → 3번째 82% → 이후 점점 강해짐
+    e.maxHp = e.hp = Math.round(d.hp * 1.35 * bk); e.dmgV = Math.round(d.dmg * 1.5 * (1 + (w - 1) * 0.1) * (0.55 + bk * 0.45)); e.spd *= 0.85 + Math.min(1, bk) * 0.15;
+  }
   else { e.maxHp = e.hp = Math.round(ps.maxHp * (2 / 3) * K); e.dmgV = Math.max(4, Math.round(ps.dmg * (2 / 3) * K)); } e.spd = d.spd * (1 + Math.min(0.35, (w - 1) * 0.025));
   e.poise = e.maxPoise = d.poise; e.scale = d.sc; e.look = LOOK[d.look]; e.wpn = EWPN[d.wpn];
   e.st = 'spawn'; e.stT = e.boss ? 1.6 : 0.85; e.cd = 0.8 + Math.random(); e.lastHit = -1; e.dead = false; e.alpha = 1; e.flash = 0; e.enraged = false; e.sq = 0;
@@ -1782,6 +1791,13 @@ function render() {
       TIP.ok = false;
       drawFigure(ctx, P.x, P.y, P.z, 1, P.face, P.turn, P.disp, PLOOK, weapon(), P.flash > 0, P.t, P.capeA, null, 0);
       ctx.globalAlpha = 1;
+      if (P.st !== 'dead') {
+        const r = clamp(P.hp / P.maxHp, 0, 1), w = 66, y = P.y - 108 - P.z;
+        ctx.fillStyle = '#000c'; ctx.fillRect(P.x - w / 2 - 2, y - 2, w + 4, 12);
+        ctx.fillStyle = r < 0.3 ? (((time * 6) | 0) % 2 ? '#ff3a3a' : '#ff9a8a') : r < 0.6 ? '#ffc83a' : '#4ae05a';
+        ctx.fillRect(P.x - w / 2, y, w * r, 8);
+        ctx.fillStyle = '#ffffff55'; ctx.fillRect(P.x - w / 2, y, w * r, 3);
+      }
       const atkWin = (P.st === 'attack' && P.at > P.A.hit[0] - 0.15 && P.at < P.A.hit[1] + 0.12) || P.st === 'dash' || P.st === 'skill' || (P.st === 'ult' && P.ultStep >= 1);
       if (TIP.ok && atkWin) pushTrail(); else if (!atkWin) trail.n = Math.min(trail.n, TRL);
     }
@@ -1950,7 +1966,7 @@ function comboBump() {
 }
 function updateHud() {
   const hp = Math.ceil(P.hp);
-  if (hp !== hc.hp || P.maxHp !== hc.mhp) { hc.hp = hp; hc.mhp = P.maxHp; const pc = hp / P.maxHp * 100 + '%'; $('hpFill').style.width = pc; $('hpLag').style.width = pc; $('hpT').textContent = hp + ' / ' + P.maxHp; }
+  if (hp !== hc.hp || P.maxHp !== hc.mhp) { hc.hp = hp; hc.mhp = P.maxHp; const r = hp / P.maxHp, pc = r * 100 + '%'; $('hpWrap').classList.toggle('low', r < 0.3); $('hpFill').style.background = r < 0.3 ? 'linear-gradient(#ff6a5a,#c01a1a)' : r < 0.6 ? 'linear-gradient(#ffe07a,#d89a1a)' : 'linear-gradient(#8aff8a,#2aa83a)'; $('hpFill').style.width = pc; $('hpLag').style.width = pc; $('hpT').textContent = hp + ' / ' + P.maxHp; }
   if (G.gold !== hc.gold) { hc.gold = G.gold; $('goldT').textContent = G.gold.toLocaleString(); }
   if (G.wave !== hc.wave) { hc.wave = G.wave; $('waveT').textContent = 'WAVE ' + G.wave; }
   const left = G.alive + G.toSpawn.length; if (left !== hc.alive) { hc.alive = left; $('enemT').textContent = left > 0 ? `남은 적 ${left}` : '섬멸 완료'; }

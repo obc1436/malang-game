@@ -12,7 +12,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#07060a;touch-action
 canvas#c{position:fixed;inset:0;width:100%;height:100%;display:block;image-rendering:pixelated;image-rendering:crisp-edges;filter:contrast(1.06) saturate(.9) sepia(.1)}
 #crt{position:fixed;inset:0;z-index:4;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.16) 0 1px,rgba(0,0,0,0) 1px 3px);mix-blend-mode:multiply}
 .hide{display:none!important}
-#hud{position:fixed;left:0;right:0;top:0;z-index:25;pointer-events:none;padding:calc(env(safe-area-inset-top) + 10px) 12px 0;display:flex;align-items:flex-start;gap:10px}
+#hud{position:fixed;left:0;right:0;top:0;z-index:5;pointer-events:none;padding:calc(env(safe-area-inset-top) + 10px) 12px 0;display:flex;align-items:flex-start;gap:10px}
 #hpWrap{flex:1;max-width:300px}
 #hpWrap .nm{font-size:11px;font-weight:900;letter-spacing:2px;color:#e8d3a0;text-shadow:0 1px 3px #000;margin-bottom:3px}
 .bar{height:14px;border-radius:3px;background:#140c0a;border:1.5px solid #8a6a3a;position:relative;overflow:hidden;box-shadow:0 2px 6px #000a,inset 0 2px 4px #000}
@@ -153,7 +153,7 @@ canvas#c{position:fixed;inset:0;width:100%;height:100%;display:block;image-rende
 <div id="hud" class="hide">
   <div id="hpWrap"><div class="nm" id="clsNm">⚔ 순례 검사</div><div class="bar"><i id="hpLag"></i><i id="hpFill"></i><b id="hpT">100 / 100</b></div></div>
   <div id="mid"><div id="waveT">WAVE 1</div><div id="enemT">남은 적 5</div></div>
-  <div id="right"><div id="gold"><div class="c"></div><span id="goldT">0</span></div><button class="hb" id="bRev" style="width:auto;padding:0 8px;font-size:12px;font-weight:900;color:#ffd0d8;border-color:#d84a6a">❤️‍🔥 부활 $<span id="revP">100</span> <span id="revN" style="background:#d84a6a;color:#fff;border-radius:8px;padding:0 5px">0</span></button><button class="hb" id="bMute">🔊</button></div>
+  <div id="right"><div id="gold"><div class="c"></div><span id="goldT">0</span></div><button class="hb" id="bRev" style="width:auto;padding:0 7px;font-size:12px;font-weight:900;color:#d0e4ff;border-color:#3a7ad8;white-space:nowrap">🛡️ 부하 $<span id="revP">80</span> <span id="revN" style="background:#3a7ad8;color:#fff;border-radius:8px;padding:0 5px">0/3</span></button><button class="hb" id="bMute">🔊</button></div>
 </div>
 <div id="bossBar" class="hide"><div class="nm" id="bossNm">타락한 신전 기사</div><div class="bar"><i id="bossLag"></i><i id="bossFill"></i></div></div>
 <div id="combo"><div id="comboN">0</div><small>HITS</small></div>
@@ -829,9 +829,9 @@ function stepPose(a, dt, base) {
   a.capeA += (tA - a.capeA) * Math.min(1, dt * 8);
   if (a.sq > 0) a.sq = Math.max(0, a.sq - dt * 1.2);
 }
-const P = Object.assign(makeActor(), { kind: 'player', hp: 100, maxHp: 100, st: 'free', inv: 0, combo: 0, comboT: 0, atkId: 0, hitsLeft: 0, multiT: 0, ult: 0,
+const P = Object.assign(makeActor(), { on: true, kind: 'player', hp: 100, maxHp: 100, st: 'free', inv: 0, combo: 0, comboT: 0, atkId: 0, hitsLeft: 0, multiT: 0, ult: 0,
   buf: null, bufT: 0, dashT: 0, dashCd: 0, dashDx: 1, dashDy: 0, perfectT: 0, lockT: null, lungeDone: false, landed: false, skill: null, prevAt: 0, ultT: 0, ultStep: 0 });
-const enemies = makePool(14, () => Object.assign(makeActor(), { kind: 'enemy', type: '', def: null, hp: 1, maxHp: 1, st: 'spawn', stT: 0, cd: 0, lastHit: -1, poise: 0, maxPoise: 0,
+const enemies = makePool(14, () => Object.assign(makeActor(), { kind: 'enemy', type: '', def: null, hp: 1, maxHp: 1, st: 'spawn', stT: 0, cd: 0, lastHit: -1, lastHitA: 0, tg: null, poise: 0, maxPoise: 0,
   strafe: 1, strafeT: 0, hitDone: false, boss: false, enraged: false, move: '', tx: 0, ty: 0, dead: false, alpha: 1, lx: 0, ly: 0, scale: 1, look: null, wpn: null, combo: 0, dmgV: 0, spd: 0 }));
 const parts = makePool(900, () => ({ x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, life: 0, max: 1, size: 2, col: '#fff', kind: 0, rot: 0, vr: 0, add: false }));
 const coins = makePool(180, () => ({ x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, val: 0, t: 0 }));
@@ -1468,13 +1468,18 @@ function killEnemy(e, dir) {
 }
 function enemyAttackStart(e) {
   e.st = 'wind'; e.stT = e.def.wind * 0.9 * (e.enraged ? 0.75 : 1);
-  setAnim(e, null, e.stT * 0.8); e.holdPose = EANIM[e.move].wind; e.face = P.x >= e.x ? 1 : -1; sfx('wind');
+  setAnim(e, null, e.stT * 0.8); e.holdPose = EANIM[e.move].wind; e.face = (e.tg || P).x >= e.x ? 1 : -1; sfx('wind');
+}
+function pickTarget(e) {
+  let best = P.st !== 'dead' ? P : null, bd = best ? (P.x - e.x) ** 2 + ((P.y - e.y) * 1.6) ** 2 : 1e12;
+  for (let i = 0; i < allies.n; i++) { const a = allies.items[i]; if (!a.on || a.dead || a.st === 'spawn') continue; const d2 = (a.x - e.x) ** 2 + ((a.y - e.y) * 1.6) ** 2; if (d2 < bd * 0.8) { bd = d2; best = a; } }
+  return best || P;
 }
 function bossChoose(e) {
-  const dx = P.x - e.x, dy = P.y - e.y, d = Math.hypot(dx, dy * 1.6), r = Math.random();
+  const T = e.tg || P, dx = T.x - e.x, dy = T.y - e.y, d = Math.hypot(dx, dy * 1.6), r = Math.random();
   if (d < 150 && r < 0.6) { e.move = 'slash'; e.combo = e.enraged ? 3 : 2; enemyAttackStart(e); }
   else if (r < 0.55) {
-    e.st = 'leapW'; e.stT = 0.55; setAnim(e, null, 0.4); e.holdPose = EANIM.slam.wind; e.tx = clamp(P.x, 80, AW - 80); e.ty = clamp(P.y, 80, AH - 60);
+    e.st = 'leapW'; e.stT = 0.55; setAnim(e, null, 0.4); e.holdPose = EANIM.slam.wind; e.tx = clamp(T.x, 80, AW - 80); e.ty = clamp(T.y, 80, AH - 60);
     const tl = takeF(tele); tl.kind = 0; tl.x = e.tx; tl.y = e.ty; tl.r = 110; tl.life = tl.max = 1.25; sfx('wind');
   } else {
     e.st = 'chargeW'; e.stT = 0.65; setAnim(e, null, 0.4); e.holdPose = EANIM.thrust.wind; e.face = dx >= 0 ? 1 : -1;
@@ -1482,14 +1487,20 @@ function bossChoose(e) {
     const tl = takeF(tele); tl.kind = 1; tl.x = e.x; tl.y = e.y; tl.x2 = e.x + e.tx * 520; tl.y2 = e.y + e.ty * 520; tl.r = 34; tl.life = tl.max = 0.65; sfx('wind');
   }
 }
+function inArea(o, e, rangeX, rangeY, quakeR, qx, qy) {
+  if (quakeR) { const dx = o.x - qx, dy = (o.y - qy) * 1.6; return dx * dx + dy * dy < quakeR * quakeR; }
+  const dx = (o.x - e.x) * e.face, dy = o.y - e.y; return dx > -20 && dx < rangeX && Math.abs(dy) < rangeY;
+}
+// 공격 범위 안의 플레이어와 부하 모두 맞음
 function enemyHitsPlayer(e, dmg, rangeX, rangeY, quakeR, qx, qy) {
-  if (G.state !== 'play' || P.st === 'dead') return false;
-  let hit;
-  if (quakeR) { const dx = P.x - qx, dy = (P.y - qy) * 1.6; hit = dx * dx + dy * dy < quakeR * quakeR; }
-  else { const dx = (P.x - e.x) * e.face, dy = P.y - e.y; hit = dx > -20 && dx < rangeX && Math.abs(dy) < rangeY; }
-  if (!hit) return false;
-  if (P.inv > 0) { if (((P.st === 'dash' && P.dashT < 0.2) || (P.st === 'skill' && P.skill && P.skill.inv && P.at < 0.5)) && P.perfectT <= 0) perfectDodge(); return false; }
-  hurtPlayer(dmg, e.x < P.x ? 1 : -1); return true;
+  if (G.state !== 'play') return false;
+  let any = false;
+  if (P.st !== 'dead' && inArea(P, e, rangeX, rangeY, quakeR, qx, qy)) {
+    if (P.inv > 0) { if (((P.st === 'dash' && P.dashT < 0.2) || (P.st === 'skill' && P.skill && P.skill.inv && P.at < 0.5)) && P.perfectT <= 0) perfectDodge(); }
+    else { hurtPlayer(dmg, e.x < P.x ? 1 : -1); any = true; }
+  }
+  for (let i = 0; i < allies.n; i++) { const a = allies.items[i]; if (a.on && !a.dead && inArea(a, e, rangeX, rangeY, quakeR, qx, qy) && hurtAlly(a, dmg, e.x < a.x ? 1 : -1)) any = true; }
+  return any;
 }
 function perfectDodge() {
   P.perfectT = 1.5; slow = 0.3; slowT = 0.55; P.inv = Math.max(P.inv, 0.6); P.dashCd = 0; P.ult = Math.min(100, P.ult + 8);
@@ -1501,7 +1512,7 @@ function hurtPlayer(dmg, dir) {
   G.combo = 0; comboBump(); P.ult = Math.min(100, P.ult + 3);
   redF = 0.45; addShake(12); addStop(0.09); sfx('hurt');
   pop(P.x, P.y - 100, '-' + dmg, '#ff4a4a', 26, true); sparks(P.x, P.y, 50, -dir, 10, '#ff8a7a', 300);
-  if (P.hp <= 0) { P.hp = 0; P.st = 'dead'; setAnim(P, ANIM.die, 0.05); P.at = 0; slow = 0.25; slowT = 1.4; setTimeout(() => { if (P.st !== 'dead') return; if (G.revives > 0) revive(); else gameOver(); }, 1600); return; }
+  if (P.hp <= 0) { P.hp = 0; P.st = 'dead'; setAnim(P, ANIM.die, 0.05); P.at = 0; slow = 0.25; slowT = 1.4; setTimeout(gameOver, 1600); return; }
   P.st = 'hurt'; setAnim(P, ANIM.hurt, 0.03); P.buf = null;
 }
 function updateEnemies(dt) {
@@ -1515,7 +1526,8 @@ function updateEnemies(dt) {
       const df = Math.exp(-4 * dt); e.vx *= df; e.vy *= df; e.x += e.vx * dt; e.y += e.vy * dt; collide(e, e.def.r);
       if (e.A) e.at += dt / e.A.dur * 0.5; stepPose(e, dt, S); e.sortY = e.y; continue;
     }
-    const d = e.def, dx = P.x - e.x, dy = P.y - e.y, dist = Math.sqrt(dx * dx + dy * dy * 1.6);
+    if (e.st === 'idle' || !e.tg || !e.tg.on || e.tg.dead) e.tg = pickTarget(e);
+    const T = e.tg, d = e.def, dx = T.x - e.x, dy = T.y - e.y, dist = Math.sqrt(dx * dx + dy * dy * 1.6);
     let tvx = 0, tvy = 0, move = false;
     switch (e.st) {
       case 'spawn':
@@ -1525,9 +1537,9 @@ function updateEnemies(dt) {
         break;
       case 'idle': {
         e.face = dx >= 0 ? 1 : -1;
-        if (e.boss) { if (dist > 130) { tvx = dx / dist * e.spd; tvy = dy / dist * e.spd * 0.8; move = true; } if (e.cd <= 0 && P.st !== 'dead') bossChoose(e); break; }
+        if (e.boss) { if (dist > 130) { tvx = dx / dist * e.spd; tvy = dy / dist * e.spd * 0.8; move = true; } if (e.cd <= 0 && T.st !== 'dead') bossChoose(e); break; }
         e.strafeT -= dt; if (e.strafeT <= 0) { e.strafe *= -1; e.strafeT = 1.2 + Math.random() * 2; }
-        const canAtk = e.cd <= 0 && atkN < maxAtk && P.st !== 'dead';
+        const canAtk = e.cd <= 0 && atkN < maxAtk && T.st !== 'dead';
         if (canAtk && dist < d.range + 10 && Math.abs(dy) < 34) { e.move = d.move; enemyAttackStart(e); atkN++; break; }
         const keep = canAtk ? d.range * 0.85 : 150 + (i % 3) * 25, nx = dx / (dist || 1), ny = dy / (dist || 1);
         if (dist > keep + 12) { tvx = nx * e.spd; tvy = ny * e.spd * 0.85; } else if (dist < keep - 20) { tvx = -nx * e.spd * 0.6; tvy = -ny * e.spd * 0.5; }
@@ -1577,7 +1589,7 @@ function updateEnemies(dt) {
       case 'charge':
         e.stT -= dt; e.vx = e.tx * 720; e.vy = e.ty * 720 * 0.8; e.at = Math.min(0.6, e.at + dt);
         if (((e.stT * 60) | 0) % 2 === 0) ghost(e, '#ff4a4a', true);
-        if (!e.hitDone) { const qx = P.x - e.x, qy = (P.y - e.y) * 1.6; if (qx * qx + qy * qy < 60 * 60 && enemyHitsPlayer(e, Math.round(e.dmgV * 1.15), 0, 0, 70, e.x, e.y)) e.hitDone = true; }
+        if (!e.hitDone && enemyHitsPlayer(e, Math.round(e.dmgV * 1.15), 0, 0, 62, e.x, e.y)) e.hitDone = true;
         if (e.stT <= 0 || e.x < 40 || e.x > AW - 40 || e.y < 40 || e.y > AH - 30) { e.st = 'idle'; setAnim(e, null, 0.25); e.vx *= 0.2; e.vy *= 0.2; e.cd = e.enraged ? 0.8 : 1.4; }
         break;
       case 'stagger': case 'hurt': case 'down': case 'recover':
@@ -1628,7 +1640,7 @@ function updateWave(dt) {
     const bossW = G.wave % 4 === 0, gate = bossW && G.toSpawn.length <= 2 && G.boss && G.boss.hp > G.boss.maxHp * 0.55;
     if (G.spawnT <= 0 && !gate && G.freeze <= 0) { spawnEnemy(G.toSpawn.shift()); G.spawnT = bossW ? 1.2 : 0.55; }
   } else if (G.alive <= 0 && G.clearT === 0) { G.clearT = 2.4; banner('CLEAR', `웨이브 ${G.wave} 돌파!`); sfx('clear'); }
-  if (G.clearT > 0) { G.clearT -= dt; if (G.clearT <= 0) { G.clearT = -1; startWave(); P.maxHp = stats().maxHp; P.hp = Math.min(P.maxHp, P.hp + P.maxHp * 0.35); pop(P.x, P.y - 110, 'LEVEL UP!', '#9aff8a', 26, true); ring(P.x, P.y, 10, 140, 0.5, '#9aff8a', 5); } }
+  if (G.clearT > 0) { G.clearT -= dt; if (G.clearT <= 0) { G.clearT = -1; startWave(); P.maxHp = stats().maxHp; P.hp = Math.min(P.maxHp, P.hp + P.maxHp * 0.35); pop(P.x, P.y - 110, 'LEVEL UP!', '#9aff8a', 26, true); for (let i = 0; i < allies.n; i++) { const a = allies.items[i]; if (a.on && !a.dead) { a.maxHp = Math.round(P.maxHp * 2 / 3); a.hp = Math.min(a.maxHp, a.hp + a.maxHp * 0.5); } } ring(P.x, P.y, 10, 140, 0.5, '#9aff8a', 5); } }
 }
 function updateCoins(dt) {
   const C = coins.items;
@@ -1667,7 +1679,7 @@ function updateFx(dt) {
   if (P.st !== 'ult' && darkF > 0) darkF = Math.max(0, darkF - dt * 1.5);
 }
 function update(dt) {
-  updatePlayer(dt); updateEnemies(dt); updateProjs(dt); updateCoins(dt);
+  updatePlayer(dt); updateAllies(dt); updateEnemies(dt); updateProjs(dt); updateCoins(dt);
   if (G.state === 'play') updateWave(dt);
   updateFx(dt);
   const z = VS * (1 + cam.punch), hw = W / 2 / z, hh = H / 2 / z;
@@ -1716,6 +1728,7 @@ function render() {
   const E = enemies.items;
   for (let i = 0; i < enemies.n; i++) { const e = E[i]; if (e.on) shadow(e.x, e.y, (e.def.r + 7) * (1 - Math.min(0.5, e.z / 300)), 0.42 * e.alpha); }
   if (G.state !== 'title') shadow(P.x, P.y, 22 * (1 - Math.min(0.5, P.z / 300)), 0.45);
+  for (let i = 0; i < allies.n; i++) { const a = allies.items[i]; if (a.on) shadow(a.x, a.y, 19, 0.4 * a.alpha); }
   for (let i = 0; i < projs.n; i++) { const o = projs.items[i]; if (o.on && o.type === 'sky' && o.delay <= 0) { const k = 1 - Math.min(1, o.z / 600); shadow(o.x, o.y, 8 + k * 18, 0.25 + k * 0.4); } }
   ctx.globalAlpha = 1;
   // 잔상
@@ -1733,6 +1746,7 @@ function render() {
   for (const b of BRAZ) if (inView(b.x, b.y, 60, 100)) drawList.push(b);
   for (let i = 0; i < enemies.n; i++) { const e = E[i]; if (e.on && inView(e.x, e.y, 120, 200)) drawList.push(e); }
   if (G.state !== 'title') drawList.push(P);
+  for (let i = 0; i < allies.n; i++) if (allies.items[i].on) drawList.push(allies.items[i]);
   drawList.sort(byY);
   for (let i = 0; i < drawList.length; i++) {
     const o = drawList[i];
@@ -1758,6 +1772,11 @@ function render() {
       ctx.globalAlpha = 1;
       if (warn) { const k = Math.sin(time * 30) * 0.5 + 0.5; ctx.fillStyle = `rgba(255,${(80 + k * 120) | 0},60,1)`; ctx.font = `900 ${20 * o.scale | 0}px sans-serif`; ctx.textAlign = 'center'; ctx.fillText('!', o.x, o.y - 104 * o.scale - o.z); }
       if (!o.boss && !o.dead && o.hp < o.maxHp && o.st !== 'spawn') { const w = 40, y = o.y - 98 * o.scale - o.z; ctx.fillStyle = '#000b'; ctx.fillRect(o.x - w / 2 - 1, y - 1, w + 2, 6); ctx.fillStyle = '#e03a2a'; ctx.fillRect(o.x - w / 2, y, w * Math.max(0, o.hp / o.maxHp), 4); }
+    } else if (o.kind === 'ally') {
+      ctx.globalAlpha = o.alpha * (o.inv > 0 && !o.dead && ((o.inv * 18) | 0) % 2 === 0 ? 0.6 : 1);
+      drawFigure(ctx, o.x, o.y, o.z, 0.94, o.face, o.turn, o.disp, ALOOK[G.cls], G.cls === 'sword' ? SWORDS[1] : FISTS[1], o.flash > 0, o.t, o.capeA, null, 0);
+      ctx.globalAlpha = 1;
+      if (!o.dead) { const w = 34, y = o.y - 92; ctx.fillStyle = '#000b'; ctx.fillRect(o.x - w / 2 - 1, y - 1, w + 2, 6); ctx.fillStyle = '#4ad86a'; ctx.fillRect(o.x - w / 2, y, w * o.hp / o.maxHp, 4); ctx.fillStyle = '#9ad8ff'; ctx.font = '900 9px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('부하', o.x, y - 6); }
     } else if (o.kind === 'player') {
       if (P.inv > 0 && P.st === 'hurt' && ((P.inv * 18) | 0) % 2 === 0) ctx.globalAlpha = 0.5;
       TIP.ok = false;
@@ -1991,12 +2010,13 @@ function saveCheckpoint() { checkpoint = { wave: G.wave, gold: G.gold, wpn: G.wp
 function gameOver() {
   G.state = 'over'; G.deaths++;
   $('overSt').innerHTML = `도달 웨이브 <b>${G.wave}</b><br>처치한 적 <b>${G.kills}</b> · 최대 콤보 <b>${G.maxCombo}</b><br>보유 금화 <b>$${G.gold}</b>`;
-  $('overNote').innerHTML = `💖 오른쪽 위 <b>부활</b> 버튼($${REV_PRICE})을 누르면 이 자리에서 바로 부활!<br>또는  무기·업그레이드·금화는 그대로 유지한 채<br><b>WAVE ${G.wave}</b>부터 다시 도전할 수 있어요.`;
+  $('overNote').innerHTML = `걱정 마세요!  무기·업그레이드·금화는 그대로 유지한 채<br><b>WAVE ${G.wave}</b>부터 다시 도전할 수 있어요.`;
   $('bRetry').textContent = `WAVE ${G.wave}부터 다시`;
   $('over').classList.remove('hide');
 }
 function clearWorld() {
   clearPool(enemies); clearPool(parts); clearPool(coins); clearPool(texts); clearPool(rings); clearPool(ghosts); clearPool(tele); clearPool(projs); clearPool(bolts);
+  clearPool(allies);
   G.toSpawn = []; G.alive = 0; G.boss = null; G.clearT = 0; G.combo = 0; G.comboTimer = 0; G.freeze = 0; for (const b of BS) { b.step = 0; b.chainT = 0; b.cd = 0; }
   P.x = AW / 2; P.y = AH / 2 + 60; P.vx = P.vy = 0; P.st = 'free'; P.A = null; P.inv = 1; P.dashCd = 0; P.buf = null; P.turn = 1; P.face = 1; P.z = 0; P.skill = null; P.holdPose = null;
   copyPose(P.disp, base()); P.bl = 1; trail.n = 0; darkF = 0;
@@ -2005,7 +2025,7 @@ function clearWorld() {
 }
 function newGame() {
   Object.assign(G, { revives: 0, wave: 0, gold: 0, totalGold: 0, kills: 0, maxCombo: 0, wpn: 0, armor: 0, boots: 0, mast: 0, bossCount: 0, deaths: 0 });
-  P.ult = 0; clearWorld(); updatePlook(); P.maxHp = P.hp = stats().maxHp; updRev();
+  P.ult = 0; clearWorld(); updatePlook(); P.maxHp = P.hp = stats().maxHp; updAlly();
 }
 function enterGame() {
   initAudio();
@@ -2022,23 +2042,88 @@ $('bRetry').addEventListener('click', () => {
   G.wave = w - 1; enterGame(); startWave();
 });
 $('bRestart').addEventListener('click', () => { $('over').classList.add('hide'); $('hud').classList.add('hide'); $('ctrl').classList.add('hide'); resize(); G.state = 'title'; $('title').classList.remove('hide'); });
-const REV_PRICE = 100;
-function updRev() { $('revN').textContent = G.revives; $('revP').textContent = REV_PRICE; }
+/* ==================================================================
+   부하(아군): 금화로 고용, 내 힘의 2/3, 쓰러지면 사라짐
+   ================================================================== */
+const ALLY_PRICE = 80, ALLY_MAX = 3;
+const ALOOK = {
+  sword: look({ skin: '#eab896', hair: '#c89a5a', hs: 'hero', top: '#3a4a6a', vest: true, armsBare: true, bracer: '#4a3a2a', trim: '#9ad8ff', pants: '#2a2a3a', boots: '#4a3424', cape: '#2a5ab0', bulk: 0.95 }),
+  fist: look({ skin: '#c88a62', hair: '#1a1a1a', hs: 'boxer', bare: true, trim: '#9ad8ff', pants: '#2a5ab0', shorts: true, boots: '#e8e4dc', band: '#2a5ab0', bulk: 1.08 })
+};
+const allies = makePool(ALLY_MAX, () => Object.assign(makeActor(), { kind: 'ally', hp: 1, maxHp: 1, st: 'free', cd: 0, combo: 0, atk: 0, hitDone: false, dead: false, alpha: 1, deadT: 0, inv: 0, slot: 0 }));
+let allySeq = 0;
+function allyCount() { let n = 0; for (let i = 0; i < allies.n; i++) if (allies.items[i].on && !allies.items[i].dead) n++; return n; }
+function updAlly() { $('revN').textContent = allyCount() + '/' + ALLY_MAX; $('revP').textContent = ALLY_PRICE; }
 $('bRev').addEventListener('click', () => {
   initAudio();
-  if (G.state === 'title') return;
-  if (G.gold < REV_PRICE) { sfx('no'); pop(P.x, P.y - 110, `금화 $${REV_PRICE} 필요`, '#ff9a8a', 18, true); return; }
-  G.gold -= REV_PRICE; G.revives++; updRev(); sfx('buy');
-  // 쓰러진 상태라면 그 자리에서 바로 부활
-  if (P.st === 'dead' || G.state === 'over') { $('over').classList.add('hide'); G.state = 'play'; revive(); return; }
-  pop(P.x, P.y - 110, '부활권 +1', '#ffb0c0', 20, true);
+  if (G.state !== 'play' || P.st === 'dead') return;
+  if (allyCount() >= ALLY_MAX) { sfx('no'); pop(P.x, P.y - 110, '부하는 최대 3명', '#9ad8ff', 18, true); return; }
+  if (G.gold < ALLY_PRICE) { sfx('no'); pop(P.x, P.y - 110, `금화 $${ALLY_PRICE} 필요`, '#ff9a8a', 18, true); return; }
+  let a = null; for (let i = 0; i < allies.n; i++) if (!allies.items[i].on) { a = allies.items[i]; a.slot = i; break; }
+  if (!a) return;
+  G.gold -= ALLY_PRICE; sfx('buy'); sfx('spawn');
+  a.on = true; a.dead = false; a.alpha = 1; a.x = clamp(P.x - P.face * 50, 40, AW - 40); a.y = clamp(P.y + (a.slot - 1) * 36, 40, AH - 30); a.z = 0; a.vx = a.vy = 0;
+  a.maxHp = a.hp = Math.round(P.maxHp * 2 / 3); a.st = 'free'; a.cd = 0.5; a.combo = 0; a.inv = 1; a.face = P.face; a.turn = 1; a.t = Math.random() * 9;
+  setAnim(a, ANIM.spawn, 0.01); a.st = 'spawn'; a.at = 0; copyPose(a.disp, ANIM.spawn.keys[0].p);
+  ring(a.x, a.y, 50, 6, 0.6, '#9ad8ff', 4); burst(a.x, a.y, 10, 24, '#9ad8ff', 160, 0.8, 4, 6, 120, true);
+  pop(a.x, a.y - 100, '부하 합류!', '#9ad8ff', 20, true); updAlly();
 });
-function revive() {
-  G.revives--; updRev();
-  P.st = 'free'; P.A = null; P.hp = P.maxHp; P.inv = 2.5; setAnim(P, null, 0.3);
-  const E = enemies.items; for (let i = 0; i < enemies.n; i++) { const e = E[i]; if (e.on && !e.dead && e.st !== 'spawn') { const d = e.x >= P.x ? 1 : -1; e.vx = d * 600; if (!e.boss) { e.st = 'down'; e.stT = ANIM.down.dur; setAnim(e, ANIM.down, 0.04); } } }
-  ring(P.x, P.y, 10, 320, 0.8, '#ffb0c0', 10); burst(P.x, P.y, 40, 50, '#ffd0d8', 420, 0.9, 4, 6, 220, true);
-  whiteF = 0.6; addShake(14); sfx('perfect'); banner('부활!', `남은 부활권 ${G.revives}개`);
+function hurtAlly(a, dmg, dir) {
+  if (a.inv > 0 || a.dead || a.st === 'spawn') return false;
+  a.hp -= dmg; a.inv = 0.45; a.flash = 0.15; a.vx = dir * 260;
+  pop(a.x, a.y - 96, '-' + dmg, '#ffb08a', 18); sparks(a.x, a.y, 50, -dir, 6, '#ffb08a', 240); sfx('punch');
+  if (a.hp <= 0) { a.hp = 0; a.dead = true; a.deadT = 1.6; setAnim(a, ANIM.die, 0.05); pop(a.x, a.y - 120, '부하가 쓰러졌다…', '#9ad8ff', 18, true); updAlly(); }
+  else { a.st = 'hurt'; setAnim(a, ANIM.hurt, 0.03); }
+  return true;
+}
+function updateAllies(dt) {
+  const E = enemies.items, cs = G.cls === 'sword', st = stats();
+  for (let i = 0; i < allies.n; i++) {
+    const a = allies.items[i]; if (!a.on) continue;
+    a.t += dt; if (a.flash > 0) a.flash -= dt; if (a.inv > 0) a.inv -= dt; if (a.cd > 0) a.cd -= dt;
+    if (a.dead) { a.at += dt / ANIM.die.dur; a.deadT -= dt; a.vx *= 0.9; a.vy *= 0.9; a.x += a.vx * dt; if (a.deadT < 0.5) a.alpha = Math.max(0, a.deadT / 0.5); if (a.deadT <= 0) a.on = false; stepPose(a, dt, base()); a.sortY = a.y; continue; }
+    // 가장 가까운 적
+    let tg = null, bd = 700 * 700;
+    for (let j = 0; j < enemies.n; j++) { const e = E[j]; if (!e.on || e.dead || e.st === 'spawn') continue; const d2 = (e.x - a.x) ** 2 + ((e.y - a.y) * 1.6) ** 2; if (d2 < bd) { bd = d2; tg = e; } }
+    let tvx = 0, tvy = 0;
+    if (a.st === 'spawn') { a.at += dt / 0.6; if (a.at >= 1) { a.st = 'free'; setAnim(a, null, 0.15); } }
+    else if (a.st === 'hurt') { a.at += dt / ANIM.hurt.dur; if (a.at >= 1) { a.st = 'free'; setAnim(a, null, 0.12); } }
+    else if (a.st === 'attack') {
+      const A = a.A; a.at += dt / A.dur;
+      if (!a.hitDone && a.at >= A.hit[0]) {
+        a.hitDone = true; a.vx = a.face * 120;
+        for (let j = 0; j < enemies.n; j++) {
+          const e = E[j]; if (!e.on || e.dead || e.st === 'spawn' || e.lastHitA === a.atk) continue;
+          const dx = (e.x - a.x) * a.face, dy = e.y - a.y;
+          if (dx > -16 && dx < st.range * 0.9 + e.def.r && Math.abs(dy) < 40 + e.def.r * 0.4 && e.z < 70) { e.lastHitA = a.atk; hitEnemy(e, Math.max(1, Math.round(st.dmg * (2 / 3) * A.dmg * (0.9 + Math.random() * 0.2))), a.face, A, false, false); }
+        }
+      }
+      if (a.at >= 1) { a.st = 'free'; setAnim(a, null, 0.12); }
+    } else {
+      if (tg) {
+        const dx = tg.x - a.x, dy = tg.y - a.y, want = st.range * 0.6 + tg.def.r;
+        a.face = dx >= 0 ? 1 : -1;
+        if (Math.abs(dx) > want || Math.abs(dy) > 18) { const gx = tg.x - a.face * want * 0.9, gy = tg.y + (a.slot - 1) * 8; const lx = gx - a.x, ly = gy - a.y, l = Math.hypot(lx, ly) || 1; tvx = lx / l * 190; tvy = ly / l * 150; }
+        else if (a.cd <= 0) {
+          a.combo = a.combo % 3 + 1; const A = ANIM[(cs ? 'a' : 'f') + a.combo];
+          a.st = 'attack'; setAnim(a, A, 0.05); a.atk = --allySeq; a.hitDone = false; a.cd = a.combo === 3 ? 1.0 : 0.3;
+          sfx(cs ? 'swing' : 'jab');
+        }
+      } else {
+        const gx = P.x - P.face * (60 + a.slot * 22), gy = P.y + (a.slot - 1) * 42, lx = gx - a.x, ly = gy - a.y, l = Math.hypot(lx, ly);
+        if (l > 24) { tvx = lx / l * Math.min(220, l * 3); tvy = ly / l * Math.min(170, l * 3); }
+        if (Math.abs(lx) > 6) a.face = lx > 0 ? 1 : -1;
+      }
+    }
+    if (a.st === 'free') { const k = Math.min(1, dt * 8); a.vx += (tvx - a.vx) * k; a.vy += (tvy - a.vy) * k; }
+    else { const df = Math.exp(-8 * dt); a.vx *= df; a.vy *= df; }
+    a.x += a.vx * dt; a.y += a.vy * dt;
+    // 적과 겹침 해소
+    for (let j = 0; j < enemies.n; j++) { const e = E[j]; if (!e.on || e.dead) continue; const dx = a.x - e.x, dy = (a.y - e.y) * 1.6, rr = e.def.r + 14, d2 = dx * dx + dy * dy; if (d2 < rr * rr && d2 > 0.01) { const d = Math.sqrt(d2), p = (rr - d) * 0.5; a.x += dx / d * p; a.y += dy / d * p / 1.6; } }
+    collide(a, 16);
+    const sp = Math.hypot(a.vx, a.vy); a.mv = Math.min(1, sp / 190); a.ph += dt * (4 + sp * 0.045);
+    stepPose(a, dt, base()); a.sortY = a.y;
+  }
 }
 $('bMute').addEventListener('click', (e) => { muted = !muted; e.currentTarget.textContent = muted ? '🔇' : '🔊'; if (AC && !muted) bgmNext = AC.currentTime + 0.1; });
 

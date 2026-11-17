@@ -62,6 +62,8 @@ canvas#c{position:fixed;inset:0;width:100%;height:100%;display:block;image-rende
 .btn small{font-size:9px;font-weight:900;letter-spacing:1px;margin-top:2px;text-shadow:0 1px 2px #000;position:relative;z-index:2}
 .btn.press{transform:scale(.86)}
 .btn::after{content:'';position:absolute;inset:0;border-radius:50%;background:conic-gradient(#000b calc(var(--cd,0)*1%),#0000 0);z-index:1}
+#bUltR{left:44px;top:44px;width:66px;height:66px;border:3px solid #fff4a0;background:radial-gradient(circle at 40% 30%,#fff2a0,#f0a020 55%,#8a3a00);animation:ultp .7s infinite alternate}
+#ultG{height:5px;margin-top:3px;border-radius:3px;background:#140c0a;border:1px solid #6a4a1e;overflow:hidden}#ultG i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ffcf4a,#fff4a0)}
 #bAtk{right:24px;bottom:24px;width:96px;height:96px;background:radial-gradient(circle at 40% 30%,#ffc07a,#d4501a 55%,#6a1a04);border:3px solid #ffe0b0}
 #bAtk span{font-size:38px}
 #bKick{right:calc(124px + env(safe-area-inset-right));bottom:10px;width:60px;height:60px;background:radial-gradient(circle at 40% 30%,#ffe08a,#b8862a 55%,#4a3006);border:2.5px solid #fff0c0}
@@ -165,7 +167,7 @@ canvas#c{position:fixed;inset:0;width:100%;height:100%;display:block;image-rende
 <div id="crt"></div>
 
 <div id="hud" class="hide">
-  <div id="hpWrap"><div class="nm" id="clsNm">⚔ 순례 검사</div><div class="bar"><i id="hpLag"></i><i id="hpFill"></i><b id="hpT">100 / 100</b></div></div>
+  <div id="hpWrap"><div class="nm" id="clsNm">⚔ 순례 검사</div><div class="bar"><i id="hpLag"></i><i id="hpFill"></i><b id="hpT">100 / 100</b></div><div id="ultG"><i id="ultBar"></i></div></div>
   <div id="mid"><div id="waveT">WAVE 1</div><div id="enemT">남은 적 5</div></div>
   <div id="right"><div id="topBar">
       <div id="gold"><div class="c"></div><span id="goldT">0</span></div>
@@ -176,6 +178,7 @@ canvas#c{position:fixed;inset:0;width:100%;height:100%;display:block;image-rende
 <div id="bossBar" class="hide"><div class="nm" id="bossNm">타락한 신전 기사</div><div class="bar"><i id="bossLag"></i><i id="bossFill"></i></div></div>
 <div id="combo"><div id="comboN">0</div><small>HITS</small></div>
 <div id="ctrl" class="hide"><div id="skRing"></div>
+  <div class="btn hide" id="bUltR"><span id="ultIc">⚡</span><small>궁극기</small></div>
   <div class="btn" id="bAtk"><span id="atkIc">⚔️</span><small>공격</small></div>
 </div>
 <div id="skillBar" class="hide"></div>
@@ -187,12 +190,12 @@ canvas#c{position:fixed;inset:0;width:100%;height:100%;display:block;image-rende
   <div class="sub">RUINED SANCTUM · 검 · 총 · 주먹</div>
   <div class="cards">
     <div class="card sel" data-c="sword"><canvas id="cvS" width="90" height="138"></canvas><h3>방랑 기사</h3><p>날렵한 검술 · 검기 발사<br>천검강림</p></div>
-    <div class="card" data-c="gun"><canvas id="cvG" width="90" height="138"></canvas><h3>총잡이</h3><p>쌍권총 원거리 사격<br>데드아이 · 수류탄</p></div>
+    <div class="card" data-c="gun"><canvas id="cvG" width="90" height="138"></canvas><h3>총잡이</h3><p>쌍권총 원거리 사격<br>하이 눈 궁극기 · 적 강화</p></div>
     <div class="card" data-c="fist"><canvas id="cvF" width="90" height="138"></canvas><h3>권투가</h3><p>초고속 연타 · 장풍<br>천붕권 궁극기</p></div>
   </div>
   <button class="gbtn" id="bStart">전투 시작</button>
   <div class="how">📱 왼쪽 드래그 <b>이동</b> · 큰 버튼 <b>공격</b>(꾹 = 연타)<br>
-  둘레의 버튼 5개 = 직업마다 다른 <b>합체 필살기</b><br>
+  둘레의 버튼 5개 = 직업마다 다른 <b>합체 필살기</b> · ⚡ 게이지가 차면 <b>궁극기</b> 버튼 등장<br>
   돌진기로 적 공격 직전 피하면 <b>퍼펙트 회피</b> · ⌨️ WASD · J 공격 · 1~5 기술</div>
 </div>
 
@@ -1142,6 +1145,7 @@ const SK_FIST = [
     fx: [{ t: 0.05, f: 'charge' }], hits: [{ t: 0.55, all: 1, r: 2.3, dmg: 2.2, kb: 720, launch: 240, poise: 90, stop: 0.15, shake: 18, snd: 'heavy', fx: 'burst' }] }
 ];
 const ULT = {
+  gun: { name: '하이 눈', icon: '☀️' },
   sword: { name: '천검강림', icon: '⚔️' },
   fist: { name: '천붕권', icon: '👊' }
 };
@@ -1187,7 +1191,7 @@ function bindBtn(el, act, hold) {
   const up = () => { el.classList.remove('press'); if (hold) atkHeld = false; };
   el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
 }
-bindBtn($('bAtk'), 'atk', true);
+bindBtn($('bAtk'), 'atk', true); bindBtn($('bUltR'), 'ult');
 // 버튼별 [1단 기술, 2단 연계기] (기술 목록의 인덱스)
 const PAIRS = { sword: [[0, 6], [1, 9], [2, 5], [3, 4], [7, 8]], fist: [[0, 7], [4, 9], [1, 5], [2, 3], [6, 8]], gun: [[0, 1], [2, 5], [9, 3], [4, 7], [8, 6]] };
 const SKL = () => G.cls === 'sword' ? SK_SWORD : G.cls === 'fist' ? SK_FIST : SK_GUN;
@@ -1551,16 +1555,42 @@ function updateProjs(dt) {
 function startUlt() {
   P.ult = 0; P.st = 'ult'; P.ultT = 0; P.ultStep = 0; P.inv = 4; P.vx = P.vy = 0; P.z = 0; P.turn = 1; trail.n = 0;
   G.freeze = 4; P.holdPose = null;
-  setAnim(P, null, 0.25); P.holdPose = G.cls === 'sword' ? PL.SKY : PL.F_CH;
-  skillName(ULT[G.cls].name); banner(ULT[G.cls].name, G.cls === 'sword' ? '하늘의 검이여, 내려오라!' : '하늘마저 부수는 주먹!');
+  setAnim(P, null, 0.25); P.holdPose = G.cls === 'sword' ? PL.SKY : G.cls === 'fist' ? PL.F_CH : GP.TWIRL; P.ultK = 0; buzz([40, 40, 80]);
+  skillName(ULT[G.cls].name); banner(ULT[G.cls].name, { sword: '하늘의 검이여, 내려오라!', fist: '하늘마저 부수는 주먹!', gun: '정오다. 모두 엎드려라.' }[G.cls]);
   sfx('riser'); darkF = 0.01;
 }
 function aliveEnemiesView(cb) { const E = enemies.items; for (let i = 0; i < enemies.n; i++) { const e = E[i]; if (e.on && !e.dead && e.st !== 'spawn' && inView(e.x, e.y, 40)) cb(e, i); } }
 function aliveEnemies(cb) { const E = enemies.items; for (let i = 0; i < enemies.n; i++) { const e = E[i]; if (e.on && !e.dead && e.st !== 'spawn') cb(e, i); } }
+const ULTL = [];
 function updateUlt(dt, st) {
   P.ultT += dt; const t = P.ultT;
   darkF = Math.min(0.55, darkF + dt * 1.2);
-  if (G.cls === 'sword') {
+  if (G.cls === 'gun') {
+    const mx = P.x + P.face * 34, mz = 60;
+    if (t < 0.9) { if (Math.random() < dt * 8) aliveEnemies((e) => ring(e.x, e.y, 46, 12, 0.35, '#ff3a3a', 3)); }
+    if (P.ultStep === 0 && t >= 0.9) { P.ultStep = 1; P.holdPose = null; setAnim(P, ANIM.g1, 0.05); P.ultTick = 0; whiteF = 0.25; sfx('perfect'); }
+    if (P.ultStep === 1) {
+      P.ultTick -= dt;
+      if (P.ultTick <= 0) {
+        P.ultTick = 0.075; ULTL.length = 0; aliveEnemies((e) => ULTL.push(e)); const list = ULTL;
+        if (list.length) {
+          const e = list[P.ultK++ % list.length]; P.face = e.x >= P.x ? 1 : -1;
+          setAnim(P, P.ultK % 2 ? ANIM.g1 : ANIM.g2, 0.02); P.at = 0.4;
+          const o = take(projs); if (o) { o.type = 'tracer'; o.x = P.x + P.face * 34; o.y = P.y; o.z = mz; o.x2 = e.x; o.y2 = e.y; o.life = o.max = 0.15; o.delay = 0; o.vx = o.vy = 0; o.dmg = 0; }
+          muzzle(P.x + P.face * 34, P.y, mz, P.face, false); sfx('gun'); buzz(14); ghost(P, '#ff6a4a');
+          hitEnemy(e, Math.round(st.dmg * 0.9 * st.skMul), e.x >= P.x ? 1 : -1, { kb: 40, poise: 999, stop: 0.012, shake: 3, snd: 'gunhit' }, false, true);
+        }
+      }
+      if (P.A) P.at = Math.min(1, P.at + dt / P.A.dur);
+      if (t >= 2.3) {
+        P.ultStep = 2; setAnim(P, ANIM.g3, 0.04); P.at = 0.3;
+        whiteF = 0.75; addShake(24); addStop(0.18); sfx('ult'); sfx('shotgun'); cam.punch = 0.12; buzz(150); ring(P.x, P.y, 20, 600, 0.9, '#ff6a4a', 14);
+        aliveEnemies((e) => { const o = take(projs); if (o) { o.type = 'tracer'; o.x = P.x + P.face * 34; o.y = P.y; o.z = mz; o.x2 = e.x; o.y2 = e.y; o.life = o.max = 0.35; o.delay = 0; o.vx = o.vy = 0; } hitEnemy(e, Math.round(st.dmg * 3.2 * st.skMul), e.x >= P.x ? 1 : -1, { kb: 560, launch: 400, poise: 999, stop: 0.04, shake: 6, heavy: true, snd: 'heavy' }, true, true); });
+      }
+    }
+    if (P.ultStep === 2) { P.at = Math.min(1, P.at + dt / 0.32); if (t >= 2.6 && P.holdPose !== GP.TWIRL) { P.holdPose = GP.TWIRL; setAnim(P, null, 0.15); skillFx('gleam'); } }
+    if (t >= 3.1) endUlt();
+  } else if (G.cls === 'sword') {
     if (t < 1.0) { if (Math.random() < dt * 40) { const p = takeF(parts), a = Math.random() * TAU; p.x = P.x + Math.cos(a) * 90; p.y = P.y + Math.sin(a) * 40; p.z = 20 + Math.random() * 100; p.vx = -Math.cos(a) * 200; p.vy = -Math.sin(a) * 90; p.vz = 60; p.life = p.max = 0.45; p.size = 2.5; p.col = '#fff4c8'; p.kind = 8; p.add = true; } }
     if (P.ultStep === 0 && t >= 1.0) {
       P.ultStep = 1; whiteF = 0.4; addShake(10);
@@ -1639,6 +1669,7 @@ function spawnEnemy(type) {
     e.maxHp = e.hp = Math.round(d.hp * 1.35 * bk); e.dmgV = Math.round(d.dmg * 1.5 * (1 + (w - 1) * 0.1) * (0.55 + bk * 0.45)); e.spd *= 0.85 + Math.min(1, bk) * 0.15;
   }
   else { e.maxHp = e.hp = Math.round(ps.maxHp * (2 / 3) * K); e.dmgV = Math.max(4, Math.round(ps.dmg * (2 / 3) * K)); } e.spd = d.spd * (1 + Math.min(0.35, (w - 1) * 0.025));
+  if (G.cls === 'gun') { e.maxHp = e.hp = Math.round(e.hp * 1.35); e.dmgV = Math.round(e.dmgV * 1.3); e.spd *= 1.12; }   // 총은 원거리라 쉬우니 적이 더 강함
   e.poise = e.maxPoise = d.poise; e.scale = d.sc; e.look = LOOK[d.look]; e.wpn = EWPN[d.wpn];
   e.st = 'spawn'; e.stT = e.boss ? 1.6 : 0.85; e.cd = 0.8 + Math.random(); e.lastHit = -1; e.dead = false; e.alpha = 1; e.flash = 0; e.enraged = false; e.sq = 0;
   e.face = e.x < P.x ? 1 : -1; e.turn = 1; e.t = Math.random() * 10; e.mv = 0; e.ph = 0; e.holdPose = null; e.prefAlly = Math.random() < 0.45; e.strafe = Math.random() < 0.5 ? 1 : -1; e.strafeT = 1 + Math.random() * 2;
@@ -2232,6 +2263,7 @@ function comboBump() {
   n.style.color = G.combo >= 50 ? '#ff8aff' : G.combo >= 20 ? '#ffd23a' : '#ffffff';
 }
 function updateHud() {
+  { const u = Math.floor(P.ult); if (u !== hc.ult) { hc.ult = u; $('ultBar').style.width = u + '%'; $('bUltR').classList.toggle('hide', u < 100); } }
   const hp = Math.ceil(P.hp);
   if (hp !== hc.hp || P.maxHp !== hc.mhp) { hc.hp = hp; hc.mhp = P.maxHp; const r = hp / P.maxHp, pc = r * 100 + '%'; $('hpWrap').classList.toggle('low', r < 0.3); $('hpFill').style.background = r < 0.3 ? 'linear-gradient(#ff6a5a,#c01a1a)' : r < 0.6 ? 'linear-gradient(#ffe07a,#d89a1a)' : 'linear-gradient(#8aff8a,#2aa83a)'; $('hpFill').style.width = pc; $('hpLag').style.width = pc; $('hpT').textContent = hp + ' / ' + P.maxHp; }
   if (G.gold !== hc.gold) { hc.gold = G.gold; $('goldT').textContent = G.gold.toLocaleString(); }
@@ -2313,7 +2345,7 @@ function newGame() {
 function enterGame() {
   initAudio();
   $('title').classList.add('hide'); $('over').classList.add('hide'); $('hud').classList.remove('hide'); $('ctrl').classList.remove('hide');
-  $('clsNm').textContent = { sword: '⚔ 순례 검사', fist: '👊 신전 권투가', gun: '🔫 황야의 총잡이' }[G.cls]; $('atkIc').textContent = { sword: '⚔️', fist: '👊', gun: '🔫' }[G.cls];
+  $('clsNm').textContent = { sword: '⚔ 순례 검사', fist: '👊 신전 권투가', gun: '🔫 황야의 총잡이' }[G.cls]; $('atkIc').textContent = { sword: '⚔️', fist: '👊', gun: '🔫' }[G.cls]; $('ultIc').textContent = ULT[G.cls].icon;
   for (const u of skBtns) u.step = -1;
   buildSkillBar(); resize();
 }
